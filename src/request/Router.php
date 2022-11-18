@@ -17,14 +17,25 @@
         // it wish to use. This allows the router to reply in a
         // correct manner.
         public function __construct(private ConType $con) {
-            $this->con = $con;
-            parent::__construct($this->con);
-
             // Set HTTP as the default connection type and JSON as
             // the default response Content-Type
             if ($this->con === ConType::HTTP) {
                 header("Content-Type: application/json");
             }
+
+            // Attempt to read from /endpoints if no path provided
+            if (empty($_ENV["endpoints"])) {
+                $_ENV["endpoints"] = Path::root("endpoints");
+            }
+
+            // Endpoints directory is not accessible
+            if (!is_dir($_ENV["endpoints"])) {
+                $this->exit_here_with_error("Invalid endpoint path", 500, "Invalid path to endpoints");
+            }
+
+            // Open connection to AuthDB
+            $this->con = $con;
+            parent::__construct($this->con);
         }
 
         // Turn "/path/to/endpoint" into "PathToEndpoint" which will be the 
@@ -99,7 +110,7 @@
             $endpoint = $this->get_endpoint_path($_SERVER["REQUEST_URI"]);
 
             // Check that the endpoint exists.
-            $path = Path::root("endpoint/${endpoint}.php");
+            $path = Path::endpoints("public/${endpoint}.php");
             if (!file_exists($path)) {
                 return $this->exit_here_with_error("No endpoint", 404, "The requested endpoint does not exist");
             }

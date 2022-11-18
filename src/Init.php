@@ -14,6 +14,12 @@
 			return dirname(Path::src()) . "/" . $crumbs;
 		}
 
+		// Get path to user endpoints
+		public static function endpoints(string $crumbs = ""): string {
+			$endpoints = !empty($_ENV["endpoints"]) ? $_ENV["endpoints"] : Path::root("endpoints");
+			return $endpoints . "/" . $crumbs;
+		}
+
 		// Get path to API parent
 		public static function api(): string {
 			return Path::src("api/API.php");
