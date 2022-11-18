@@ -40,8 +40,10 @@
 		public function return_bool(string $sql, mixed $params = []): bool;
 	}
 
-	// Load Composer dependencies
-	//require_once Path::root("vendor/autoload.php");
-
 	// Put environment variables from INI into superglobal
 	$_ENV = parse_ini_file(Path::root(".env.ini"), true);
+	
+	// Merge environment variables from user endpoints with existing
+	if (file_exists(Path::endpoints(".env.ini"))) {
+		$_ENV = array_merge($_ENV, parse_ini_file(Path::endpoints(".env.ini"), true));
+	}
