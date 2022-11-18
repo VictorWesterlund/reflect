@@ -9,7 +9,7 @@
         private static $key_default = "HTTP_ANYONE_KEY";
 
         public function __construct(private ConType $con) {
-            parent::__construct($_ENV["db"]["authdb"]);
+            parent::__construct($_ENV["mariadb"]["db"]);
 
             // Get API key from GET parameter if not UNIX socket
             $this->key = $con === ConType::AF_UNIX ? "UNIX_SOCKET_KEY" : $this->get_api_key();
