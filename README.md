@@ -5,6 +5,8 @@ It handles authentication and request routing so you can put more attention towa
 
 > **Note**: This repo contains only the framework and no actual endpoints.
 
+Check out the [Reflect wiki](https://github.com/VictorWesterlund/reflect/wiki) and the [Get Started guide](https://github.com/VictorWesterlund/reflect/wiki/Get-Started) for how to use this framework.
+
 ## 📥 Installation
 
 To install Reflect you need the following prerequisites:
