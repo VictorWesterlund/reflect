@@ -3,6 +3,33 @@
 Reflect is a framework for building REST APIs over HTTP and UNIX sockets in PHP. 
 It handles authentication and request routing so you can put more attention towards building great endpoints.
 
+---
+
+An endpoint in Reflect is a *single PHP file* which contains a class of methods with *semantic naming* for your HTTP methods.
+
+```php
+<?php
+
+   require_once Path::api();
+   require_once Path::endpoint("controller/MyExternalClass.php");
+
+   class Ping extends API {
+      public class __construct() {
+         parent::__construct(ContentType::JSON);
+      }
+      
+      public function _GET() {
+         return $this->stdout("You said: " . $_GET["ping"]);
+      }
+      
+      public function _PUT() {
+         $resp = new MyExternalClass($_POST["foo"]);
+         return $this->stdout("You said: " . $resp->out());
+      }
+   }
+   
+```
+
 > **Note**: This repo contains only the framework and no actual endpoints.
 
 Check out the [Reflect wiki](https://github.com/VictorWesterlund/reflect/wiki) and the [Get Started guide](https://github.com/VictorWesterlund/reflect/wiki/Get-Started) for how to use this framework.
@@ -50,18 +77,10 @@ Prerequisites specific for HTTP:
 * A webserver (preferably NGINX 1.18+)
 
 Then:
-
-1. **Enable HTTP**
-
-   Enable the HTTP endpoint by setting the `http` variable in `.env.ini` to the fully-qualified domain you wish to use.
    
-   ```ini
-   http = "https://localhost:44301/"
-   ```
-   
-2. **Point webserver root**
+1. **Point webserver root**
 
-   Point the root of a virtual host on your webserver to the `/public` folder in this repo.
+   Point the root of a virtual host on your webserver to the `/public` folder in this repo. HTTP is enabled by default so this is all you have to do.
   
    ```nginx
    root /path/to/reflect/public;
