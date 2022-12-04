@@ -1,4 +1,4 @@
-# 🪞 Reflect REST API
+# Reflect
 
 Reflect is a framework for building REST APIs over HTTP and UNIX sockets in PHP. 
 It handles authentication and request routing so you can put more attention towards building great endpoints.
@@ -29,8 +29,6 @@ An endpoint in Reflect is a *single PHP file* which contains a class of methods 
    }
    
 ```
-
-> **Note**: This repo contains only the framework and no actual endpoints.
 
 Check out the [Reflect wiki](https://github.com/VictorWesterlund/reflect/wiki) and the [Get Started guide](https://github.com/VictorWesterlund/reflect/wiki/Get-Started) for how to use this framework.
 
@@ -123,3 +121,7 @@ Then:
    ![image](https://user-images.githubusercontent.com/35688133/201733771-1801be4f-de78-4b10-a819-71a5d4252b92.png)
 
 ---
+
+# Get started
+
+Read the [Get started guide](https://github.com/VictorWesterlund/reflect/wiki/Get-Started) in the Wiki
