@@ -1,0 +1,3 @@
+CREATE TABLE keys (
+    uuid TEXT PRIMARY KEY NOT NULL
+);

@@ -1,5 +1,6 @@
 <?php
 
+    require_once Path::src("database/Idemp.php");
     require_once Path::src("api/helpers/RuleMatcher.php");
 
     // Allowed response Content-Types
@@ -27,12 +28,34 @@
             }
         }
 
+        // Attempt to spend an idempotency key sent by the requester
+        private function idempotent_ok(): bool|null {
+            // Idempotency key not provided
+            if (empty($_POST[IdempDb::$key])) {
+                return false;
+            }
+
+            return (new IdempDb())->set($_POST[IdempDb::$key]);
+        }
+
         // Request body must match certain requirements since
         // we're changing data now and wish to be more careful.
         private function input_constraints() {
             // A request body is required
             if (empty($_POST)) {
                 return $this->stderr("Payload required", 400, "The request body can not be empty");
+            }
+
+            // Validate and spend idempotency key if enabled for environment
+            if (!empty($_ENV["idempotency"])) {
+                $idemp = $this->idempotent_ok();
+
+                if (!$idemp) {
+                    $key = IdempDb::$key;
+                    $msg = $idemp === null ? "Not a valid UUID4 string" : "This key has been used before";
+
+                    return $this->stderr("Idempotency failed", 409, $msg);
+                }
             }
 
             // The endpoint has defiend input rules so let's
@@ -51,11 +74,15 @@
                     ]);
                 }
 
+                // Add exception for idempotency key for next operation.
+                // This field should be allowed to exist.
+                $this::$rules[IdempDb::$key] = null;
+
                 // Restrict PATCH-able columns to the keys defined in ruleset (whitelist)
                 foreach (array_keys($_POST) as $field) {
                     // Field is not in whitelist so abort
                     if (!in_array($field, array_keys($this::$rules))) {
-                        return $this->stderr("Unprocessable entity", 422, "Can not process unkown field '${field}'");
+                        return $this->stderr("Unprocessable entity", 422, "Can not process unknown field '${field}'");
                     }
                 }
             }

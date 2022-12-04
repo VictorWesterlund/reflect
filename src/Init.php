@@ -33,13 +33,6 @@
 		}
 	}
 
-	// Database classes need to export these methods to allow interfaces
-	// to swap between drivers with minimal to no code changes.
-	interface DatabaseDriver {
-		public function return_array(string $sql, mixed $params = []): array;
-		public function return_bool(string $sql, mixed $params = []): bool;
-	}
-
 	// Put environment variables from INI into superglobal
 	$_ENV = parse_ini_file(Path::root(".env.ini"), true);
 	

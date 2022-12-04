@@ -21,22 +21,39 @@
 
         // Return true if string matches an arbitrary "type" pattern
         // such as a valid e-mail address for "email" etc.
-        public static function rule_type(string|null $value, string $cstr = "text"): string|bool {
+        public static function rule_type(mixed $value, string $cstr = "text"): string|bool {
             switch ($cstr) {
                 // Match a standard non-interal e-mail address
                 case "email":
                     $pattern = "/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[a-z]{2,4}$/";
                     return boolval(preg_match($pattern, $value)) ?: "Not a valid e-mail address";
 
-                // Free text field
+                // -- Primitives --
+
+                case "boolean":
+                case "bool":
+                    return is_bool($value) ?: "Must be of type boolean";
+
+                case "object":
+                case "array":
+                    return is_array($value) ?: "Must be of type array";
+
+                case "integer":
+                case "int":
+                    return is_int($value) ?: "Must be of type integer";
+
+                case "number":
+                case "num":
+                    return !is_string($value) && is_numeric($value) ?: "Must be a numeric type";
+
                 case "text":
                 default:
-                    return true;
+                    return is_string($value) ?: "Must be of type string";
             }
         }
 
         // Return true if field is required and not null
-        public static function rule_required(string|null $value, bool $cstr = true): string|bool {
+        public static function rule_required(mixed $value, bool $cstr = true): string|bool {
             $match = $cstr && !empty($value) ? true : false;
             return $match ?: "This field can not be empty";
         }
