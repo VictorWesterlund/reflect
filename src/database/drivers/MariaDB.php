@@ -1,6 +1,6 @@
 <?php
 
-	class MariaDBDriver extends mysqli implements DatabaseDriver {
+	class MariaDBDriver extends mysqli {
 		function __construct(string $database) {
 			if (substr($_ENV["mariadb"]["host"], 0, 1) === "/") {
 				// Initialize mysqli with unix domain socket
