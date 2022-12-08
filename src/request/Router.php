@@ -6,6 +6,7 @@
     enum ConType {
         case AF_UNIX;
         case HTTP;
+        case INTERNAL;
     }
 
     // This is the dynamic request router used to translate a
@@ -59,6 +60,10 @@
         // errors with the request itself or for control requests
         // such as HTTP method "OPTIONS".
         private function exit_here(mixed $msg, int $code = 200) {
+            if ($this->con === ConType::INTERNAL) {
+                return $msg;
+            }
+
             if ($this->con === ConType::AF_UNIX) {
                 return $_ENV["SOCKET_STDOUT"](json_encode($msg), $code);
             }
@@ -142,6 +147,7 @@
             if (!method_exists($api, $method)) {
                 return $this->exit_here_with_error("Method not allowed", 405, "The endpoint does not implement the method sent with your request");
             }
-            $api->$method();
+
+            return $api->$method();
         }
     }

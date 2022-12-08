@@ -1,12 +1,24 @@
 <?php
 
+    require_once Path::src("request/Router.php");
     require_once Path::src("database/Idemp.php");
     require_once Path::src("api/helpers/RuleMatcher.php");
+    require_once Path::src("api/helpers/InternalStateStack.php");
 
     // Allowed response Content-Types
     enum ContentType {
         case JSON;
         case Text;
+    }
+
+    // Allowed HTTP verbs
+    enum Method: string {
+        case GET     = "GET";
+        case POST    = "POST";
+        case PUT     = "PUT";
+        case DELETE  = "DELETE";
+        case PATCH   = "PATCH";
+        case OPTIONS = "OPTIONS";
     }
 
     // This class is inherited by all API endpoints and contains
@@ -100,6 +112,11 @@
                     $output = is_string($output) ? $output : json_encode($output);
             }
 
+            // Connection is through internal router
+            if (isset($_ENV["INTERNAL_STDOUT"])) {
+                return $output;
+            }
+
             // Connection is through socket
             if (isset($_ENV["SOCKET_STDOUT"])) {
                 return $_ENV["SOCKET_STDOUT"]($output, $code);
@@ -112,21 +129,58 @@
 
         // Send message to standard error output using the normal
         // standard output as the relay.
-        public function stderr(string $error, int $code = 500, mixed $msg = null): never {
+        public function stderr(string $error, int $code = 500, mixed $msg = null) {
             $this->stdout([
                 "error"     => $error,
                 "errorCode" => $code,
                 "details"   => $msg
             ], $code);
-
-            die();
         }
 
-        // Make call to an internal peer endpoint. This can be used to
-        // chain actions with a pipeline structure.
-        // NOTE: This will bypass AuthDB for any endpoint called using
-        //       this method. 
-        public function call(string $endpoint) {
-            // ...
+        // Make call to another endpoint without creating a new request.
+        // This method will stash the current request state and simulate a
+        // new request by overwriting superglobal parameters. The initial request
+        // superglobal state will be restored before returning from this method.
+        public function call(string $endpoint, Method $method = null, array $payload = null): mixed {
+            // Stash the current superglobal values
+            $stack = new InternalStateStack();
+
+            // Use request method from argument or carry current method if not provided
+            $stack->set(Super::SERVER, "REQUEST_METHOD", !empty($method) ? $method->value : $_SERVER["REQUEST_METHOD"]);
+
+            // Split endpoint string into path and query
+            $endpoint = explode("?", $endpoint, 2);
+
+            // Set requested endpoint path with leading slash
+            $stack->set(Super::SERVER, "REQUEST_URI", "/" . $endpoint[0]);
+
+            // Set GET parameters from query string
+            if (count($endpoint) == 2) {
+                parse_str($endpoint[1], $params);
+
+                foreach ($params as $key => $value) {
+                    $stack->set(Super::GET, $key, $value);
+                }
+            }
+
+            // Set POST parameters from payload array
+            if (!empty($payload)) {
+                $stack->set(Super::SERVER, "Content-Type", "application/json");
+                
+                foreach ($payload as $key => $value) {
+                    $stack->set(Super::POST, $key, $value);
+                }
+            }
+
+            // Set flag to enable returning for out functions
+            $stack->set(Super::ENV, "INTERNAL_STDOUT", Flag::NULL);
+
+            // Start "proxied" Router. Connection type INTERNAL will make its
+            // API->stdout() and API->stderr() return instead of exit.
+            $resp = json_decode((new Router(ConType::INTERNAL))->main(), true);
+
+            // Restore initial superglobals
+            $stack->restore();
+            return $output;
         }
     }
