@@ -75,7 +75,7 @@
 
         // Wrapper for exit_here() but sets some standard error
         // formatting before sent to output.
-        private function exit_here_with_error(string $error, int $code = 500, string $msg = null) {
+        private function exit_here_with_error(string $error, int $code = 500, mixed $msg = null) {
             return $this->exit_here([
                 "error"     => $error,
                 "errorCode" => $code,
@@ -141,6 +141,20 @@
             }
 
             $api = new $class();
+
+            // Check input constraints for API before running endpoint method
+            if (in_array($_SERVER["REQUEST_METHOD"], ["POST", "PUT", "PATCH"])) {
+                // Parse JSON payload from client into superglobal.
+                // $_POST will be used for all methods containing a client payload.
+                if ($this->con !== ConType::INTERNAL && !empty($_SERVER["HTTP_CONTENT_TYPE"]) && $_SERVER["HTTP_CONTENT_TYPE"] === "application/json") {
+                    $_POST = JSON::load("php://input") ?? [];
+                }
+
+                $constr = $api->input_constraints();
+                if ($constr !== true) {
+                    return $this->exit_here_with_error(...$constr);
+                }
+            }
 
             // Call method from imported class (_GET(), _POST() etc.)
             $method = "_{$_SERVER["REQUEST_METHOD"]}";
