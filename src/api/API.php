@@ -124,7 +124,7 @@
         // Send message to standard error output using the normal
         // standard output as the relay.
         public function stderr(string $error, int $code = 500, mixed $msg = null) {
-            $this->stdout([
+            return $this->stdout([
                 "error"     => $error,
                 "errorCode" => $code,
                 "details"   => $msg
@@ -177,6 +177,6 @@
 
             // Restore initial superglobals
             $snapshot->restore();
-            return $resp;
+            return json_decode($resp, true);
         }
     }
