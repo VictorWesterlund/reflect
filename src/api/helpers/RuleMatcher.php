@@ -54,7 +54,7 @@
 
         // Return true if field is required and not null
         public static function rule_required(mixed $value, bool $cstr = true): string|bool {
-            $match = $cstr && !empty($value) ? true : false;
+            $match = $cstr && !empty($value) ? true : !empty($value);
             return $match ?: "This field can not be empty";
         }
     }

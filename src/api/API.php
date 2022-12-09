@@ -177,6 +177,8 @@
 
             // Restore initial superglobals
             $snapshot->restore();
-            return json_decode($resp, true);
+
+            // Return response as array
+            return is_string($resp) ? json_decode($resp, true) : $resp;
         }
     }
