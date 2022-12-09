@@ -10,9 +10,6 @@
 
         public function __construct(private ConType $con) {
             parent::__construct($_ENV["mariadb"]["db"]);
-
-            // Get API key from GET parameter if not UNIX socket
-            $this->key = $con === ConType::AF_UNIX ? "UNIX_SOCKET_KEY" : $this->get_api_key();
         }
 
         // Return bool user id is enabled
@@ -59,7 +56,7 @@
         // Return all available request methods to endpoint with key
         public function get_options(string $endpoint): array {
             $sql = "SELECT method FROM api_acl WHERE api_key = ? AND endpoint = ?";
-            $res = $this->return_array($sql, [ $this->key, $endpoint ]);
+            $res = $this->return_array($sql, [ $this->get_api_key(), $endpoint ]);
             
             // Flatten array to only values of "method"
             return !empty($res) ? array_column($res, "method") : [];
@@ -72,12 +69,14 @@
                 return false;
             }
 
-            $test = $this->key;
+            if (in_array($this->con, [ConType::INTERNAL, ConType::AF_UNIX])) {
+                return true;
+            }
 
             // Check if the API key has access to the requested endpoint and method
             $sql = "SELECT NULL FROM api_acl WHERE api_key = ? AND endpoint = ? AND method = ? LIMIT 1";
             return $this->return_bool($sql, [
-                $this->key,
+                $this->get_api_key(),
                 $endpoint,
                 $method
             ]);

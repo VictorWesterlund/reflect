@@ -1,12 +1,24 @@
 <?php
 
+    require_once Path::src("request/Router.php");
     require_once Path::src("database/Idemp.php");
     require_once Path::src("api/helpers/RuleMatcher.php");
+    require_once Path::src("api/helpers/GlobalSnapshot.php");
 
     // Allowed response Content-Types
     enum ContentType {
         case JSON;
         case Text;
+    }
+
+    // Allowed HTTP verbs
+    enum Method: string {
+        case GET     = "GET";
+        case POST    = "POST";
+        case PUT     = "PUT";
+        case DELETE  = "DELETE";
+        case PATCH   = "PATCH";
+        case OPTIONS = "OPTIONS";
     }
 
     // This class is inherited by all API endpoints and contains
@@ -16,16 +28,6 @@
         // the standard outputs of this class.
         public function __construct(private ContentType $type) {
             $this->type = $type;
-            
-            if (in_array($_SERVER["REQUEST_METHOD"], ["POST", "PUT", "PATCH"])) {
-                // Parse JSON payload from client into superglobal.
-                // $_POST will be used for all methods containing a client payload.
-                if (!empty($_SERVER["HTTP_CONTENT_TYPE"]) && $_SERVER["HTTP_CONTENT_TYPE"] === "application/json") {
-                    $_POST = JSON::load("php://input") ?? [];
-                }
-
-                $this->input_constraints();
-            }
         }
 
         // Attempt to spend an idempotency key sent by the requester
@@ -40,10 +42,12 @@
 
         // Request body must match certain requirements since
         // we're changing data now and wish to be more careful.
-        private function input_constraints() {
+        // Returns true if constraints matched or array explaining
+        // what went wrong.
+        public function input_constraints(): bool|array {
             // A request body is required
             if (empty($_POST)) {
-                return $this->stderr("Payload required", 400, "The request body can not be empty");
+                return ["Payload required", 400, "The request body can not be empty"];
             }
 
             // Validate and spend idempotency key if enabled for environment
@@ -54,7 +58,7 @@
                     $key = IdempDb::$key;
                     $msg = $idemp === null ? "Not a valid UUID4 string" : "This key has been used before";
 
-                    return $this->stderr("Idempotency failed", 409, $msg);
+                    return ["Idempotency failed", 409, $msg];
                 }
             }
 
@@ -68,10 +72,10 @@
 
                 // Post body fields did not satisfy rules emposed by the endpoint
                 if (!empty($matches)) {
-                    return $this->stderr("Unprocessable entity", 422, [
+                    return ["Unprocessable entity", 422, [
                         "info"   => "The following fields did not meet their requirements",
                         "errors" => $matches
-                    ]);
+                    ]];
                 }
 
                 // Add exception for idempotency key for next operation.
@@ -82,10 +86,12 @@
                 foreach (array_keys($_POST) as $field) {
                     // Field is not in whitelist so abort
                     if (!in_array($field, array_keys($this::$rules))) {
-                        return $this->stderr("Unprocessable entity", 422, "Can not process unknown field '${field}'");
+                        return ["Unprocessable entity", 422, "Can not process unknown field '${field}'"];
                     }
                 }
             }
+
+            return true;
         }
 
         // Send output to the standard output of the current connection
@@ -100,6 +106,11 @@
                     $output = is_string($output) ? $output : json_encode($output);
             }
 
+            // Connection is through internal router
+            if (isset($_ENV["INTERNAL_STDOUT"])) {
+                return $output;
+            }
+
             // Connection is through socket
             if (isset($_ENV["SOCKET_STDOUT"])) {
                 return $_ENV["SOCKET_STDOUT"]($output, $code);
@@ -112,21 +123,62 @@
 
         // Send message to standard error output using the normal
         // standard output as the relay.
-        public function stderr(string $error, int $code = 500, mixed $msg = null): never {
-            $this->stdout([
+        public function stderr(string $error, int $code = 500, mixed $msg = null) {
+            return $this->stdout([
                 "error"     => $error,
                 "errorCode" => $code,
                 "details"   => $msg
             ], $code);
-
-            die();
         }
 
-        // Make call to an internal peer endpoint. This can be used to
-        // chain actions with a pipeline structure.
-        // NOTE: This will bypass AuthDB for any endpoint called using
-        //       this method. 
-        public function call(string $endpoint) {
-            // ...
+        // Make request to another internal/peer endpoint
+        public function call(string $endpoint, Method $method = null, array $payload = null): mixed {
+            // Capture a snapshot of the current superglobal state so when
+            // we can restore it before returning from this method.
+            $snapshot = new GlobalSnapshot();
+
+            // Use request method from argument or carry current method if not provided
+            $_SERVER["REQUEST_METHOD"] = !empty($method) ? $method->value : $_SERVER["REQUEST_METHOD"];
+
+            // Split endpoint string into path and query
+            $endpoint = explode("?", $endpoint, 2);
+            // Set requested endpoint path with leading slash
+            $_SERVER["REQUEST_URI"] = "/" . $endpoint[0];
+
+            // Truncate GET superglobal
+            $_GET = [];
+            // Set GET parameters from query string
+            if (count($endpoint) == 2) {
+                parse_str($endpoint[1], $params);
+
+                foreach ($params as $key => $value) {
+                    $_GET[$key] = $value;
+                }
+            }
+
+            // Truncate POST superglobal
+            $_POST = [];
+            // Set POST parameters from payload array
+            if (!empty($payload)) {
+                $_SERVER["HTTP_CONTENT_TYPE"] = "application/json";
+                
+                foreach ($payload as $key => $value) {
+                    $_POST[$key] = $value;
+                }
+            }
+
+            // Set flag to let outputting functions know that we wish to return
+            // instead of exit.
+            $_ENV["INTERNAL_STDOUT"] = true;
+
+            // Start "proxied" Router. Connection type INTERNAL will make its
+            // API->stdout() and API->stderr() return instead of exit.
+            $resp = (new Router(ConType::INTERNAL))->main();
+
+            // Restore initial superglobals
+            $snapshot->restore();
+
+            // Return response as array
+            return is_string($resp) ? json_decode($resp, true) : $resp;
         }
     }
