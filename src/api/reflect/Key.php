@@ -40,13 +40,13 @@
                 $res = $this->db->return_array($sql, $_GET["id"]);
 
                 if (empty($res)) {
-                    return $this->stdout("Failed to get key data", 422, $res);
+                    return $this->stderr("Failed to get key data", 422, $res);
                 }
 
                 // Flatten array
                 $res = $res[0];
                 // Resolve user foregin key
-                $res["user"] = $this->call("reflect/User?id={$res["user"]}");
+                $res["user"] = $this->call("reflect/User?id={$res["user"]}")[0]["id"];
 
                 return $this->stdout($res);
             }
@@ -60,8 +60,16 @@
             // Array of columns to patch
             $update = [];
 
-            if (!empty($_POST["id"])) {
-                $update["id"] = $_POST["id"];
+            if (empty($_GET["id"])) {
+                return $this->stderr("No key selected", 404, "Param 'id' is required");
+            }
+
+            if (!empty($_POST["active"])) {
+                if (!is_bool($_POST["active"])) {
+                    return $this->stderr("Invalid data type", 400, "Expected field 'active' to be of type boolean");
+                }
+
+                $update["active"] = $_POST["active"];
             }
 
             if (!empty($_POST["user"])) {

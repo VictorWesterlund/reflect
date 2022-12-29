@@ -24,9 +24,11 @@
         public function _GET() {
             // Return bool if Reflect API user exists and is active by id
             if (!empty($_GET["id"])) {
-                return $this->db->user_active($_GET["id"]) 
-                    ? $this->stdout("OK") 
-                    : $this->stderr("No user", 404, "User is inactive or does not exist");
+                $sql = "SELECT id, active, created FROM api_users WHERE id = ?";
+                $res = $this->db->return_array($sql, $_GET["id"]);
+                return !empty($res) 
+                    ? $this->stdout($res) 
+                    : $this->stderr("No user", 404, "User does not exist");
             }
 
             // Return array of all active users
@@ -37,21 +39,24 @@
         // Set active state of user
         public function _PUT() {
             $sql = "UPDATE api_users SET active = ? WHERE id = ?";
-            return $this->stdout($sql,
-                // Default state to active if undefined
+            $res = $this->db->return_bool($sql, [
                 empty($_POST["active"]) ?: true,
-                $_GET["id"]
-            );
+                $_POST["id"]
+            ]);
+
+            return !empty($res) ? $this->stdout("OK") : $this->stderr("Failed to add user", 500, $res);
         }
 
         // Create new user
         public function _POST() {
             $sql = "INSERT INTO api_users (id, active, created) VALUES (?, ?, ?)";
-            return $this->stdout($sql, [
+            $res = $this->db->return_bool($sql, [
                 $_POST["id"],
                 !empty($_POST["active"]) ? $_POST["active"] : 1,
                 time()
             ]);
+
+            return !empty($res) ? $this->stdout("OK") : $this->stderr("Failed to add user", 500, $res);
         }
 
         // Delete user by id
@@ -63,13 +68,13 @@
 
             // Check that the user exists and is active
             $user = $this->call("reflect/User?id={$_GET["id"]}", Method::GET);
-            if ($user !== "OK") {
+            if (!empty($user[0]["errorCode"]) && $user[0]["errorCode"] !== 404) {
                 return $this->stderr("No user", 404, "User is inactive or does not exist");
             }
 
             // Soft-delete by deactivating user by id
             $sql = "UPDATE api_users SET active = 0 WHERE id = ?";
-            $res = $this->return_bool($sql, $_GET["id"]);
+            $res = $this->db->return_bool($sql, $_GET["id"]);
             return !empty($res) ? $this->stdout("OK") : $this->stderr("Failed to delete user", 500, $res);
         }
     }
