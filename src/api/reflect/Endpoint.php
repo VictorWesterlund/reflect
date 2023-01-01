@@ -9,6 +9,10 @@
                 "required" => true,
                 "type"     => "text",
                 "max"      => 128
+            ],
+            "active"   => [
+                "required" => false,
+                "type"     => "bool"
             ]
         ];
 
@@ -37,14 +41,14 @@
         public function _GET() {
             // Check if endpoint exists by name
             if (!empty($_GET["id"])) {
-                $sql = "SELECT NULL FROM api_endpoints WHERE endpoint = ? AND active = 1";
-                $res = $this->db->return_bool($sql, $_GET["id"]);
+                $sql = "SELECT endpoint, active FROM api_endpoints WHERE endpoint = ?";
+                $res = $this->db->return_array($sql, $_GET["id"]);
 
-                return !empty($res) ? $this->stdout("OK") : $this->stderr("No endpoint", 404, "No endpoint found with name '{$_GET["id"]}'");
+                return !empty($res) ? $this->stdout($res) : $this->stderr("No endpoint", 404, "No endpoint found with name '{$_GET["id"]}'");
             }
 
             // Return array of all active Reflect API users
-            $sql = "SELECT endpoint FROM api_endpoints WHERE active = 1";
+            $sql = "SELECT endpoint, active FROM api_endpoints";
             return $this->stdout($this->db->return_array($sql));
         }
 
@@ -61,11 +65,19 @@
                 $update["endpoint"] = $_POST["endpoint"];
             }
 
+            if (!empty($_POST["active"])) {
+                if (!is_bool($_POST["active"])) {
+                    return $this->stderr("Invalid data type", 400, "Expected field 'active' to be of type boolean");
+                }
+
+                $update["active"] = $_POST["active"];
+            }
+
             // Build SQL UPDATE CSV from array of values
             $columns = array_map(fn($column): string => "${column} = ?", array_keys($update));
             $columns = implode(",", $columns);
 
-            $sql = "UPDATE api_endpoints SET ${columns} WHERE id = ?";
+            $sql = "UPDATE api_endpoints SET ${columns} WHERE endpoint = ?";
             // Create new array with id of target row appended to array of column values
             $res = $this->db->return_bool($sql, array_merge(
                 array_values($update),
@@ -75,6 +87,10 @@
             return !empty($res) ? $this->stdout("OK") : $this->stderr("Failed to update", 400, $res);
         }
 
+        public function _PUT() {
+            return $this->_PATCH();
+        }
+
         // Add new endpoint
         public function _POST() {
             $endpoint = $this::uc_first_endpoint($_POST["endpoint"]);
@@ -82,14 +98,10 @@
                 return $this->stderr("Invalid endpoint", 400, "Endpoint name must contain scope and endpoint separated by a slash");
             }
 
-            // Capitalize first char of endpoint
-            $key = array_key_last($crumbs);
-            $crumbs[$key] = ucfirst($crumbs[$key]);
-
             // Attempt to add endpoint
             $sql = "INSERT INTO api_endpoints (endpoint, active) VALUES (?, ?)";
-            $res = $this->return_bool($sql, [
-                $_POST["endpoint"],
+            $res = $this->db->return_bool($sql, [
+                $endpoint,
                 1
             ]);
 

@@ -5,12 +5,6 @@
 
     class _ReflectAcl extends API {
         public static $rules = [
-            "id"       => [
-                "required" => false,
-                "type"     => "text",
-                "min"      => 1,
-                "max"      => 32
-            ],
             "api_key"  => [
                 "required" => true,
                 "max"      => 32
@@ -63,15 +57,14 @@
                 return $this->stderr("Invalid HTTP method", 400, "'{$_POST["method"]}' is not a valid HTTP verb");
             }
 
-            // Derive key from a SHA256 hash of user id and current time
-            // if no custom key is provided
-            if (empty($_POST["id"])) {
-                $_POST["id"] = uniqid("", true);
-            }
-
             $sql = "INSERT INTO api_acl (id, api_key, endpoint, method, created) VALUES (?, ?, ?, ?, ?)";
             $res = $this->db->return_bool($sql, [
-                $_POST["id"],
+                // Id will be a SHA256 hash of all ACL fields truncated to 32 chars
+                substr(hash("sha256", implode("", [
+                    $_POST["api_key"],
+                    $_POST["endpoint"],
+                    $_POST["method"]
+                ])), -32),
                 $_POST["api_key"],
                 $_POST["endpoint"],
                 $_POST["method"],
