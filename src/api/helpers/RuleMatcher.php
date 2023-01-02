@@ -87,6 +87,11 @@
 
             // Loop over each field
             foreach ($all_rules as $field => $rules) {
+                // Ignore invalid fields
+                if ($rules === null) {
+                    continue;
+                }
+
                 // Prepend "required" false rule if not present in rules array
                 if (!in_array("required", array_keys($rules))) {
                     $rules["required"] = false;
