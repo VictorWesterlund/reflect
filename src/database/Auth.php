@@ -6,20 +6,23 @@
         // This is the default fallback key used when no key is provided
         // with the request (anonymous) and when a provided key lacks
         // access to a particular resource (forbidden).
-        private static $key_default = "HTTP_ANYONE_KEY";
+        public static $key_default = "HTTP_ANYONE_KEY";
+        // This key is used for internal requests.
+        // I.e request using API->call() or Reflect's meta-endpoints.
+        public static $key_internal = "INTERNAL";
 
         public function __construct(private ConType $con) {
             parent::__construct($_ENV["mariadb"]["db"]);
         }
 
         // Return bool user id is enabled
-        private function user_active(string $user): bool {
+        public function user_active(string $user): bool {
             $sql = "SELECT NULL FROM api_users WHERE id = ? AND active = 1";
             return $this->return_bool($sql, $user);
         }
 
         // Validate API key from GET parameter
-        private function get_api_key(): string {
+        public function get_api_key(): string {
             // No "key" parameter provided so use anonymous key
             if (empty($_SERVER["HTTP_AUTHORIZATION"])) {
                 // Mock Authorization header
@@ -34,21 +37,18 @@
                 return AuthDB::$key_default;
             }
 
-            // Check that key exists, is active, and not expired
+            // Check that key exists, is active, and not expired (now > created && now < expires)
             $sql = "SELECT user FROM api_keys WHERE id = ? 
-            AND active = 1 AND (? < expires)";
+            AND active = 1 AND CURRENT_TIMESTAMP() BETWEEN `created` AND COALESCE(`expires`, NOW())";
 
-            $res = $this->return_array($sql, [
-                $key,
-                time()
-            ]);
+            $res = $this->return_array($sql, $key);
             
             // Return key from request or default to anonymous key if it's invalid
             return !empty($res) && $this->user_active($res[0]["user"]) ? $key : AuthDB::$key_default;
         }
 
         // Return bool endpoint enabled
-        private function endpoint_active(string $endpoint): bool {
+        public function endpoint_active(string $endpoint): bool {
             $sql = "SELECT NULL FROM api_endpoints WHERE endpoint = ? AND active = 1 LIMIT 1";
             return $this->return_bool($sql, $endpoint);
         }
@@ -69,16 +69,31 @@
                 return false;
             }
 
+            // Internal connections are always allowed
             if (in_array($this->con, [ConType::INTERNAL, ConType::AF_UNIX])) {
                 return true;
             }
 
+            // Get user API key
+            $key = $this->get_api_key();
+
             // Check if the API key has access to the requested endpoint and method
             $sql = "SELECT NULL FROM api_acl WHERE api_key = ? AND endpoint = ? AND method = ? LIMIT 1";
-            return $this->return_bool($sql, [
-                $this->get_api_key(),
+            $res = $this->return_bool($sql, [
+                $key,
                 $endpoint,
                 $method
             ]);
+
+            // API key does not have access. So let's check if the endpoint is public
+            if (empty($res) && !in_array($key, [AuthDB::$key_default, AuthDB::$key_internal])) {
+                $res = $this->return_bool($sql, [
+                    AuthDB::$key_default,
+                    $endpoint,
+                    $method
+                ]);
+            }
+
+            return !empty($res);
         }
     }

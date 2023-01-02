@@ -115,7 +115,12 @@
             $endpoint = $this->get_endpoint_path($_SERVER["REQUEST_URI"]);
 
             // Check that the endpoint exists.
-            $path = Path::endpoints("public/${endpoint}.php");
+            // If root endpoint starts with "reflect/" read from the internal_endpoint folder
+            // as this is a meta-request for details about the current Reflect instance.
+            $path = substr($endpoint, 0, 8) !== "reflect/" 
+                ? Path::endpoints("public/${endpoint}.php") 
+                : Path::src("api/${endpoint}.php");
+
             if (!file_exists($path)) {
                 return $this->exit_here_with_error("No endpoint", 404, "The requested endpoint does not exist");
             }
