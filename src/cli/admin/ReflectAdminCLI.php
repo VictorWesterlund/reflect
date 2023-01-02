@@ -228,19 +228,33 @@
                         return $this->error("User name can not be empty");
                     }
 
-                    // Check that the user exists
-                    $key = $this->exec("reflect/Key?id={$this->args[2]}", Method::GET);
-                    if (!empty($key[0])) {
-                        // Reactivate user if already exists
-                        if ($key[0]["active"] === 0) {
-                            return $this->echo($this->exec("reflect/Key?id={$this->args[2]}", Method::PATCH, [
-                                "active" => true
-                            ]));
+                    // User does not exist
+                    $user = $this->exec("reflect/User?id={$this->args[2]}", Method::GET);
+                    if (!empty($user[0]["errorCode"])) {
+                        return $this->error($user);
+                    };
+
+                    // Requesting to generate or reactivate a key with specific id
+                    if (!empty($this->args[3])) {
+                        // Check if key key exists
+                        $key = $this->exec("reflect/Key?id={$this->args[3]}", Method::GET);
+                        if (empty($key["errorCode"])) {
+                            // Reactivate key if exists
+                            if ($key["active"] === 0) {
+                                return $this->echo($this->exec("reflect/Key?id={$this->args[2]}", Method::PATCH, [
+                                    "active" => true
+                                ]));
+                            }
                         }
 
-                        return $this->echo("User already added");
+                        // Add named key
+                        return $this->echo($this->exec("reflect/Key", Method::POST, [
+                            "id"   => $this->args[3],
+                            "user" => $this->args[2]
+                        ]));
                     }
 
+                    // Generate a new key for user
                     return $this->echo($this->exec("reflect/Key", Method::POST, [
                         "user" => $this->args[2],
                     ]));
@@ -251,10 +265,10 @@
                     }
 
                     // Check that the key exists
-                    $check = $this->exec("reflect/Key?id={$this->args[2]}", Method::GET);
-                    if ($check !== "OK") {
-                        return $this->error("User does not exist");
-                    }
+                    $key = $this->exec("reflect/Key?id={$this->args[2]}", Method::GET);
+                    if (!empty($key[0]["errorCode"])) {
+                        return $this->error($key);
+                    };
 
                     // Delete key by id
                     return $this->echo($this->exec("reflect/Key?id={$this->args[2]}", Method::DELETE));
@@ -300,30 +314,16 @@
 
                     $this->args[2] = $this::uc_endpoint($this->args[2]);
 
-                    // Check that endpoint exists
-                    if (!empty($this->exec("reflect/Endpoint?id={$this->args[2]}", Method::GET)["error"])) {
-                        return $this->error("Invalid endpoint");
-                    }
-
-                    // Check that key exists
-                    if (!empty($this->exec("reflect/Key?id={$this->args[4]}", Method::GET)["error"])) {
-                        return $this->error("Invalid API key");
-                    }
-
                     // Id is a SHA256 hash of all ACL fields truncated to 32 chars
-                    $id = substr(hash("sha256", implode("", [
+                    $hash = substr(hash("sha256", implode("", [
                         $this->args[4], // API key
                         $this->args[2], // Endpoint
-                        $this->args[3] // Method
+                        strtoupper($this->args[3]) // Method
                     ])), -32);
 
-                    if ($this->args[2] === "deny") {
-                        return $this->echo($this->exec("reflect/Acl?id=${id}", Method::DELETE));
-                    }
-
-                    // Check that a grant does not already exist for endpoint
-                    if (empty($this->exec("reflect/Acl?id=${id}", Method::GET)["error"])) {
-                        return $this->error("Already granted");
+                    // Request is to remove an existing ACL record
+                    if ($this->args[1] === "deny") {
+                        return $this->echo($this->exec("reflect/Acl?id=${hash}", Method::DELETE));
                     }
 
                     return $this->echo($this->exec("reflect/Acl", Method::POST, [
