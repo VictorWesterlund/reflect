@@ -59,7 +59,7 @@
             if (!Method::tryFrom($_POST["method"])) {
                 return $this->stderr("Invalid HTTP method", 400, "'{$_POST["method"]}' is not a valid HTTP verb");
             }
-
+            
             // Generate truncated SHA256 hash to 32 chars of of input fields
             $hash = substr(hash("sha256", implode("", [
                 $_POST["api_key"],
