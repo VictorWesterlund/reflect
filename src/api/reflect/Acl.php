@@ -40,31 +40,41 @@
         }
 
         public function _POST() {
+            // Check endpoint is valid
+            $endpoint = $this->call("reflect/Endpoint?id={$_POST["endpoint"]}", Method::GET);
+            if (!empty($endpoint["errorCode"])) {
+                return $this->stderr("Unprocessable entity", 422, $endpoint);
+            }
+
             // Check key is valid
-            $key = $this->call("reflect/Key?id={$_POST["api_key"]}");
-            if (empty($key)) {
+            $key = $this->call("reflect/Key?id={$_POST["api_key"]}", Method::GET);
+            if (!empty($key["errorCode"])) {
                 return $this->stderr("Unprocessable entity", 422, $key);
             }
 
-            // Check user is valid
-            $user = $this->call("reflect/User?id={$_POST["api_key"]}");
-            if (empty($user)) {
-                return $this->stderr("Unprocessable entity", 422, $user);
-            }
+            // Make HTTP method uppercase
+            $_POST["method"] = strtoupper($_POST["method"]);
 
             // Check method is in whitelist
             if (!Method::tryFrom($_POST["method"])) {
                 return $this->stderr("Invalid HTTP method", 400, "'{$_POST["method"]}' is not a valid HTTP verb");
             }
 
+            // Generate truncated SHA256 hash to 32 chars of of input fields
+            $hash = substr(hash("sha256", implode("", [
+                $_POST["api_key"],
+                $_POST["endpoint"],
+                $_POST["method"]
+            ])), -32);
+
+            // Check if ACL rule already exists
+            if (empty($this->call("reflect/Acl?id=${hash}", Method::GET)["errorCode"])) {
+                return $this->stderr("Already granted", 400, "This ACL rule has already been set");
+            }
+
             $sql = "INSERT INTO api_acl (id, api_key, endpoint, method, created) VALUES (?, ?, ?, ?, ?)";
             $res = $this->db->return_bool($sql, [
-                // Id will be a SHA256 hash of all ACL fields truncated to 32 chars
-                substr(hash("sha256", implode("", [
-                    $_POST["api_key"],
-                    $_POST["endpoint"],
-                    $_POST["method"]
-                ])), -32),
+                $hash,
                 $_POST["api_key"],
                 $_POST["endpoint"],
                 $_POST["method"],
@@ -72,5 +82,15 @@
             ]);
 
             return !empty($res) ? $this->stdout("OK") : $this->stderr("Failed to add ACL rule", 500, $res);
+        }
+
+        public function _DELETE() {
+            if (empty($_GET["id"])) {
+                $this->stderr("Bad request", 400, "No ACL id provided");
+            }
+
+            $sql = "DELETE FROM api_acl WHERE id = ?";
+            $res = $this->db->return_bool($sql, $_GET["id"]);
+            return !empty($res) ? $this->stdout("OK") : $this->stderr("Failed to remove ACL rule", 500, $res);
         }
     }
