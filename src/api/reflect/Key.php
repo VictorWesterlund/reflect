@@ -14,6 +14,10 @@
             "user"    => [
                 "required" => true
             ],
+            "active"  => [
+                "required" => false,
+                "type"     => "bool"
+            ],
             "expires" => [
                 "required" => false,
                 "type"     => "int"
@@ -106,14 +110,10 @@
 
         // Create new API key for user
         public function _POST() {
-            // Reflect user must exist before creating a key
-            if ($this->call("reflect/user?id={$_POST["user"]}", Method::GET) !== "OK") {
-                return $this->stderr("No user", 404, "No Reflect user found with id '{$_POST["user"]}'");
-            }
-
-            // Check expiry date is greater than current timestamp
-            if (!empty($_POST["id"]) && !$this::key_valid($_POST["id"])) {
-                return $this->stderr("Invalid expiry date", 400, "Expiry date must be greater than current time");
+            // Check that the user exists and is active
+            $user = $this->call("reflect/User?id={$_POST["user"]}", Method::GET);
+            if (!empty($user[0]["errorCode"])) {
+                return $this->stderr("Failed to add key", 500, $user);
             }
 
             // Derive key from a SHA256 hash of user id and current time
@@ -147,13 +147,14 @@
             }
 
             // Check that the key exists and is active
-            if (empty($this->call("reflect/Key?id={$_GET["id"]}", Method::GET))) {
-                return $this->stderr("No key", 404, "Key is inactive or does not exist");
+            $key = $this->call("reflect/Key?id={$_GET["id"]}", Method::GET);
+            if (!empty($user[0]["errorCode"])) {
+                return $this->stderr("Failed to add key", 500, $key);
             }
 
             // Soft-delete by deactivating key by id
             $sql = "UPDATE api_keys SET active = 0 WHERE id = ?";
-            $res = $this->return_bool($sql, $_GET["id"]);
+            $res = $this->db->return_bool($sql, $_GET["id"]);
             return !empty($res) ? $this->stdout("OK") : $this->stderr("Failed to delete key", 500, $res);
         }
     }
