@@ -4,20 +4,8 @@
     require_once Path::src("api/API.php");
 
     class ReflectAdminCLI extends CLI {
-        // All Reflect admin operations require at least 3 arguments
-        private static $arglen = 3;
-
         public function __construct(array $args) {
-            parent::__construct();
-
-            // Get all CLI args except name of script file
-            array_shift($args);
-            $this->args = $args;
-
-            // Pad array of arguments to expected length with nulls
-            if (count($this->args) < $this::$arglen) {
-                $this->pad_args();
-            }
+            parent::__construct($args, 3);
 
             // Send to handler function
             switch ($this->args[0]) {
@@ -58,15 +46,6 @@
 
             // Reconstruct endpoint name
             return implode("/", $crumbs);
-        }
-
-        // Add padding to argument array
-        private function pad_args() {
-            $arglen = count($this->args);
-            $padding = $this::$arglen - $arglen;
-
-            // Fill remaining array slots with nulls
-            $this->args = array_merge($this->args, array_fill($arglen, $padding, null));
         }
 
         // Make an internal API request to reflect endpoints
