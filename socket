@@ -1,0 +1,7 @@
+<?php
+
+    require_once "src/Init.php";
+    require_once Path::src("cli/socket/SocketServerCLI.php");
+
+    // Start the socket server interface
+    new SocketServerCLI($argv);
