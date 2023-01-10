@@ -54,7 +54,7 @@
 
         // Return true if field is required and not null
         public static function rule_required(mixed $value, bool $cstr = true): string|bool {
-            $match = $cstr && !empty($value) ? true : !empty($value);
+            $match = $cstr && !empty($value) ? true : isset($value);
             return $match ?: "This field can not be empty";
         }
     }
@@ -87,6 +87,11 @@
 
             // Loop over each field
             foreach ($all_rules as $field => $rules) {
+                // Ignore invalid fields
+                if ($rules === null) {
+                    continue;
+                }
+
                 // Prepend "required" false rule if not present in rules array
                 if (!in_array("required", array_keys($rules))) {
                     $rules["required"] = false;
