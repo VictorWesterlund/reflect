@@ -31,7 +31,11 @@
             }
 
             $uri = parse_url($uri);
-            $_POST = json_decode($data, true) ?? null;
+
+            // Load request body fields into $_POST superglobal if set
+            if (!empty($data)) {
+                $_POST = json_decode($data, true);
+            }
 
             $_SERVER['REQUEST_URI'] = isset($uri["path"]) ? "/" . $uri["path"] : "/"; // Set request path with leading slash
             isset($uri["query"]) ? parse_str($uri["query"], $_GET) : null; // Set request parameters
