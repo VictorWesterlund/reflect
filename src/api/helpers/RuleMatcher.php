@@ -54,8 +54,12 @@
 
         // Return true if field is required and not null
         public static function rule_required(mixed $value, bool $cstr = true): string|bool {
-            $match = $cstr && !empty($value) ? true : isset($value);
-            return $match ?: "This field can not be empty";
+            // Return true if field is not required. It doesn't matter if it's empty
+            if ($cstr !== true) {
+                return true;
+            }
+
+            return $value !== "" ? true : "This field can not be empty";
         }
     }
 
