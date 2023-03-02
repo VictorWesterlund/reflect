@@ -1,7 +1,7 @@
 <?php
 
-    require_once Path::src("cli/CLI.php");
-    require_once Path::src("api/API.php");
+    require_once Path::reflect("src/cli/CLI.php");
+    require_once Path::reflect("src/api/API.php");
 
     class ReflectAdminCLI extends CLI {
         public function __construct(array $args) {

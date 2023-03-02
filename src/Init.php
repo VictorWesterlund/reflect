@@ -4,25 +4,22 @@
 	// A tailing / is appended to each return to prevent adjacent dirname
 	// attacks from API controllers.
 	final class Path {
-		// Get path to /src/ folder
-		public static function src(string $crumbs = ""): string {
-			return __DIR__ . "/" . $crumbs;
+		public static $driver_mariadb = "src/database/drivers/556a74ed1a50cd7d2e3e7b2cc7e40706/MariaDB.php";
+		public static $driver_sqlite  = "src/database/drivers/9f50ea1a5be726e610dc2fe134926869/SQLite.php";
+
+		// Get path to or relative path from the Reflect install directory
+		public static function reflect(string $crumbs = ""): string {
+			return dirname(__DIR__) . "/" . $crumbs;
 		}
 
-		// Get path to root of project
+		// Get path to the default API class
+		public static function init(): string {
+			return Path::reflect("src/api/API.php");
+		}
+
+		// Get path to or relative path from the user's configured root
 		public static function root(string $crumbs = ""): string {
-			return dirname(Path::src()) . "/" . $crumbs;
-		}
-
-		// Get path to user endpoints
-		public static function endpoints(string $crumbs = ""): string {
-			$endpoints = !empty($_ENV["endpoints"]) ? $_ENV["endpoints"] : Path::root("endpoints");
-			return $endpoints . "/" . $crumbs;
-		}
-
-		// Get path to API parent
-		public static function api(): string {
-			return Path::src("api/API.php");
+			return $_ENV["endpoints"] . (substr($crumbs, 0, 1) === "/" ? "" : "/") . $crumbs;
 		}
 	}
 
@@ -34,9 +31,9 @@
 	}
 
 	// Put environment variables from INI into superglobal
-	$_ENV = parse_ini_file(Path::root(".env.ini"), true);
+	$_ENV = parse_ini_file(Path::reflect(".env.ini"), true);
 	
 	// Merge environment variables from user endpoints with existing
-	if (file_exists(Path::endpoints(".env.ini"))) {
-		$_ENV = array_merge($_ENV, parse_ini_file(Path::endpoints(".env.ini"), true));
+	if (file_exists(Path::root(".env.ini"))) {
+		$_ENV = array_merge($_ENV, parse_ini_file(Path::root(".env.ini"), true));
 	}

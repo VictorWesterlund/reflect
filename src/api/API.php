@@ -1,9 +1,9 @@
 <?php
 
-    require_once Path::src("request/Router.php");
-    require_once Path::src("database/Idemp.php");
-    require_once Path::src("api/helpers/RuleMatcher.php");
-    require_once Path::src("api/helpers/GlobalSnapshot.php");
+    require_once Path::reflect("src/request/Router.php");
+    require_once Path::reflect("src/database/Idemp.php");
+    require_once Path::reflect("src/api/helpers/RuleMatcher.php");
+    require_once Path::reflect("src/api/helpers/GlobalSnapshot.php");
 
     // Allowed response Content-Types
     enum ContentType {

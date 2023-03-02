@@ -1,7 +1,7 @@
 <?php
 
-    require_once Path::src("cli/CLI.php");
-    require_once Path::src("cli/socket/SocketServer.php");
+    require_once Path::reflect("src/cli/CLI.php");
+    require_once Path::reflect("src/cli/socket/SocketServer.php");
 
     class SocketServerCLI extends CLI {
         public function __construct(array $args) {

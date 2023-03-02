@@ -1,7 +1,7 @@
 <?php
 
     require_once "src/Init.php";
-    require_once Path::src("cli/admin/ReflectAdminCLI.php");
+    require_once Path::reflect("src/cli/admin/ReflectAdminCLI.php");
 
     // Start the admin interface
     new ReflectAdminCLI($argv);
