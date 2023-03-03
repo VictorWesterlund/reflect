@@ -34,7 +34,7 @@
             $res = $res[0];
 
             // User is not active
-            return $this->call("reflect/User?id={$res["user"]}")
+            return $this->call("reflect/user?id={$res["user"]}")
                 ? $this->stdout($res["user"])
                 : $this->stderr("No user", 404, "API user is disabled or does not exist");
         }
@@ -42,7 +42,7 @@
         // Delete own user (by flagging it as inactive)
         public function _DELETE() {
             // Get user id from key
-            $user_id = $this->call("reflect/session/User", Method::GET);
+            $user_id = $this->call("reflect/session/user", Method::GET);
             // Trying to delete a Reflect default user will probably cause problems.
             // A default user can not be deleted from the session endpoints.
             if (empty($user_id) || $user_id === "HTTP_ANYONE") {
