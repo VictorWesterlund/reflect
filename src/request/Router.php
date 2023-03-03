@@ -89,6 +89,7 @@
         // permissions against AuthDB, and initializing the endpoint handler class.
         // This is the default request flow.
         public function main() {
+            $test = $this->endpoint;
             // Request URLs starting with "reflect/" are reserved and should read from the internal endpoints located at /src/api/
             $file = substr($this->endpoint, 0, 8) !== "reflect/"
                 // User endpoints are kept in folders with 'index.php' as the file to run

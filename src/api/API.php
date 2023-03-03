@@ -21,11 +21,9 @@
         case OPTIONS = "OPTIONS";
     }
 
-    // This class is inherited by all API endpoints and contains
-    // some standard bootstrapping functionality.
+    // This class is inherited by all API endpoints and contains some standard bootstrapping functionality.
     class API {
-        // An endpoint must specify a valid Content-Type to use
-        // the standard outputs of this class.
+        // An endpoint must specify a valid Content-Type to use the standard outputs of this class.
         public function __construct(private ContentType $type) {
             $this->type = $type;
         }
@@ -40,10 +38,8 @@
             return (new IdempDb())->set($_POST[IdempDb::$key]);
         }
 
-        // Request body must match certain requirements since
-        // we're changing data now and wish to be more careful.
-        // Returns true if constraints matched or array explaining
-        // what went wrong.
+        // Request body must match certain requirements since we're changing data now and wish to be more careful.
+        // Returns true if constraints matched or array explaining what went wrong.
         public function input_constraints(): bool|array {
             // A request body is required
             if (empty($_POST)) {
@@ -62,11 +58,9 @@
                 }
             }
 
-            // The endpoint has defiend input rules so let's
-            // make sure all fields match constraints before we proceed.
-            // PATCH is not included here since it updates a subset of columns.
-            // Validation of these should be performed on an Endpoint level in
-            // the "_PATCH()" method.
+            // The endpoint has defiend input rules so let's make sure all fields match constraints before we proceed.
+            // PATCH is not included here since it updates a subset of columns. Validation of these should be performed 
+            // on an Endpoint level in the "_PATCH()" method.
             if (property_exists($this, "rules")) {
                 $matches = (new RuleMatcher($_POST))->match_rules($this::$rules);
 
@@ -94,8 +88,7 @@
             return true;
         }
 
-        // Send output to the standard output of the current connection
-        // method. It can be either HTTP or through UNIX socket.
+        // Send output to the standard output of the current connection method. It can be either HTTP or through UNIX socket.
         public function stdout(mixed $output, int $code = 200) {
             switch ($this->type) {
                 case ContentType::JSON:
@@ -133,8 +126,7 @@
 
         // Make request to another internal/peer endpoint
         public function call(string $endpoint, Method $method = null, array $payload = null): mixed {
-            // Capture a snapshot of the current superglobal state so when
-            // we can restore it before returning from this method.
+            // Capture a snapshot of the current superglobal state so when we can restore it before returning from this method.
             $snapshot = new GlobalSnapshot();
 
             // Use request method from argument or carry current method if not provided
@@ -145,9 +137,8 @@
             // Set requested endpoint path with leading slash
             $_SERVER["REQUEST_URI"] = "/" . $endpoint[0];
 
-            // Truncate GET superglobal
+            // Truncate GET superglobal and repopulate it with values from method call
             $_GET = [];
-            // Set GET parameters from query string
             if (count($endpoint) == 2) {
                 parse_str($endpoint[1], $params);
 
@@ -156,9 +147,8 @@
                 }
             }
 
-            // Truncate POST superglobal
+            // Truncate POST superglobal and repopulate it with values from method call
             $_POST = [];
-            // Set POST parameters from payload array
             if (!empty($payload)) {
                 $_SERVER["HTTP_CONTENT_TYPE"] = "application/json";
                 
@@ -167,15 +157,13 @@
                 }
             }
 
-            // Set flag to let outputting functions know that we wish to return
-            // instead of exit.
+            // Set flag to let stdout() know that we wish to return instead of exit.
             $_ENV["INTERNAL_STDOUT"] = true;
 
-            // Start "proxied" Router. Connection type INTERNAL will make its
-            // API->stdout() and API->stderr() return instead of exit.
+            // Start "proxied" Router. Connection type INTERNAL will make its API->stdout() and API->stderr() return instead of exit.
             $resp = (new Router(ConType::INTERNAL))->main();
 
-            // Restore initial superglobals
+            // Restore all superglobals. This will discard any modifications to superglobals prior to method call.
             $snapshot->restore();
 
             // Return response as array
