@@ -1,7 +1,7 @@
 <?php
 
-    require_once Path::api();
-    require_once Path::src("database/Auth.php");
+    require_once Path::init();
+    require_once Path::reflect("src/database/Auth.php");
 
     class _ReflectAcl extends API {
         public static $rules = [

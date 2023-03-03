@@ -1,6 +1,6 @@
 <?php
 
-    require_once Path::src("database/drivers/556a74ed1a50cd7d2e3e7b2cc7e40706/MariaDB.php");
+    require_once Path::reflect(Path::$driver_mariadb);
 
     class AuthDB extends MariaDBDriver {
         // This is the default fallback key used when no key is provided

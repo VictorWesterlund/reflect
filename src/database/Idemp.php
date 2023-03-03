@@ -1,6 +1,6 @@
 <?php
 
-    require_once Path::src("database/drivers/9f50ea1a5be726e610dc2fe134926869/SQLite.php");
+    require_once Path::reflect(Path::$driver_sqlite);
 
     class IdempDb extends SQLiteDriver {
 
@@ -9,7 +9,7 @@
         public static $key = "idempotency_key";
 
         public function __construct() {
-            parent::__construct($this->get_db_name(), Path::src("database/init/IDEMP.sql"));
+            parent::__construct($this->get_db_name(), Path::reflect("src/database/init/IDEMP.sql"));
         }
 
         // Check if string is valid UUID4
