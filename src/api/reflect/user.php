@@ -67,7 +67,7 @@
             }
 
             // Check that the user exists and is active
-            $user = $this->call("reflect/User?id={$_GET["id"]}", Method::GET);
+            $user = $this->call("reflect/user?id={$_GET["id"]}", Method::GET);
             if (!empty($user[0]["errorCode"]) && $user[0]["errorCode"] !== 404) {
                 return $this->stderr("No user", 404, "User is inactive or does not exist");
             }

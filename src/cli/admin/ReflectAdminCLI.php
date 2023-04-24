@@ -26,26 +26,9 @@
                     break;
 
                 default:
-                    $this->error("Not a valid function");
+                    $this->error("Not a valid option", "reflect <endpoint/user/key/acl>");
                     break;
             }
-        }
-
-        private static function uc_endpoint(string $endpoint): string {
-            // Split endpoint string into crumbs
-            $crumbs = explode("/", $endpoint);
-
-            // Use root name as class name if root endpoint
-            if (count($crumbs) < 2) {
-                $crumbs[] = $crumbs[0];
-            }
-
-            // Capitalize first char of endpoint
-            $key = array_key_last($crumbs);
-            $crumbs[$key] = ucfirst($crumbs[$key]);
-
-            // Reconstruct endpoint name
-            return implode("/", $crumbs);
         }
 
         // Make an internal API request to reflect endpoints
@@ -58,7 +41,7 @@
             switch ($this->args[1]) {
                 case "list":
                     // Get list of endpoints
-                    $endpoints = $this->exec("reflect/Endpoint", Method::GET);
+                    $endpoints = $this->exec("reflect/endpoint", Method::GET);
                     $endpoints = array_column($endpoints, "endpoint");
 
                     // Format list of endpoints
@@ -67,7 +50,7 @@
 
                         // Endpoint is internal
                         if ($crumbs[0] === "reflect") {
-                            array_unshift($crumbs, "_");
+                            array_unshift($crumbs, "\e[96msystem:\e[0m ");
                         }
 
                         // Endpoint is root, so display only the first crumb
@@ -86,44 +69,48 @@
                     return $this->list($endpoints);
 
                 case "add":
-                    $endpoint = $this::uc_endpoint($this->args[2]);
+                    // Next argument should be the endpoint name
+                    $endpoint = $this->args[2];
+
                     if (!$endpoint) {
-                        $this->error("Endpoint name can not be empty");
+                        return $this->error("Expected endpoint name", "reflect add <endpoint>");
                     }
 
                     // Check that the endpoint does not already exist.
-                    $check = $this->exec("reflect/Endpoint?id=${endpoint}", Method::GET);
+                    $check = $this->exec("reflect/endpoint?id=${endpoint}", Method::GET);
 
                     // We expect a 404 response from the endpoint since we're attemting to
                     // create it. Any other errorCode should be treated as an error.
-                    if (!empty($check["errorCode"]) && $check["errorCode"] !== 404) {
+                    if (in_array("errorCode", array_keys($check)) && $check["errorCode"] !== 404) {
                         return $this->error($check);
                     };
 
-                    // User already exists
+                    // Endpoint already exists
                     if (!empty($check[0])) {
-                        // Reactivate user if already exists
+                        // Reactivate endpoint if it already exists
                         if ($check[0]["active"] === 0) {
-                            return $this->echo($this->exec("reflect/Endpoint?id=${endpoint}", Method::PATCH, [
+                            return $this->echo($this->exec("reflect/endpoint?id=${endpoint}", Method::PATCH, [
                                 "active" => true
                             ]));
                         }
 
-                        return $this->echo("Endpoint already added");
+                        return $this->error("Endpoint already added");
                     }
 
-                    return $this->echo($this->exec("reflect/Endpoint", Method::POST, [
+                    return $this->echo($this->exec("reflect/endpoint", Method::POST, [
                         "endpoint" => $endpoint
                     ]));
 
                 case "remove":
+                    // Next argument should be endpoint name
+                    $endpoint =$this->args[2];
+
                     // Check that the endpoint does not already exist.
-                    $endpoint = $this::uc_endpoint($this->args[2]);
                     if (!$endpoint) {
-                        $this->error("Endpoint name can not be empty");
+                        return $this->error("Expected endpoint name", "reflect endpoint remove <endpoint>");
                     }
 
-                    $check = $this->exec("reflect/Endpoint?id=${endpoint}", Method::GET);
+                    $check = $this->exec("reflect/endpoint?id=${endpoint}", Method::GET);
 
                     // Endpoint does not exist
                     if (!empty($check["errorCode"])) {
@@ -131,17 +118,17 @@
                     };
 
                     // Delete endpoint by id
-                    return $this->echo($this->exec("reflect/Endpoint?id=${endpoint}", Method::DELETE));
+                    return $this->echo($this->exec("reflect/endpoint?id=${endpoint}", Method::DELETE));
 
                 default:
-                    return $this->error("No operation");
+                    return $this->error("Expected endpoint operation", "reflect endpoint <list/add/remove>");
             }
         }
 
         private function user() {
             switch ($this->args[1]) {
                 case "list":
-                    return $this->list($this->exec("reflect/User?id={$this->args[2]}", Method::GET));
+                    return $this->list($this->exec("reflect/user?id={$this->args[2]}", Method::GET));
 
                 case "add":
                     if (empty($this->args[2])) {
@@ -149,7 +136,7 @@
                     }
 
                     // Check that the user does not already exist.
-                    $user = $this->exec("reflect/User?id={$this->args[2]}", Method::GET);
+                    $user = $this->exec("reflect/user?id={$this->args[2]}", Method::GET);
 
                     // We expect a 404 response from the endpoint since we're attemting to
                     // create it. Any other errorCode should be treated as an error.
@@ -161,7 +148,7 @@
                     if (!empty($user[0])) {
                         // Reactivate user if already exists
                         if ($user[0]["active"] === 0) {
-                            return $this->echo($this->exec("reflect/User", Method::PUT, [
+                            return $this->echo($this->exec("reflect/user", Method::PUT, [
                                 "id"     => $this->args[2],
                                 "active" => true
                             ]));
@@ -170,7 +157,7 @@
                         return $this->echo("User already added");
                     }
 
-                    return $this->echo($this->exec("reflect/User", Method::POST, [
+                    return $this->echo($this->exec("reflect/user", Method::POST, [
                         "id"     => $this->args[2],
                         "active" => true
                     ]));
@@ -181,7 +168,7 @@
                     }
 
                     // Check that the user does not already exist.
-                    $user = $this->exec("reflect/User?id={$this->args[2]}", Method::GET);
+                    $user = $this->exec("reflect/user?id={$this->args[2]}", Method::GET);
 
                     // User does not exist
                     if (!empty($user[0]["errorCode"]) && $user[0]["errorCode"] !== 404) {
@@ -189,10 +176,10 @@
                     };
 
                     // Delete user by id
-                    return $this->echo($this->exec("reflect/User?id={$this->args[2]}", Method::DELETE));
+                    return $this->echo($this->exec("reflect/user?id={$this->args[2]}", Method::DELETE));
 
                 default:
-                    return $this->error("No operation");
+                    return $this->error("Expected user operation", "reflect user <list/add/remove>");
             }
         }
 
@@ -200,7 +187,7 @@
             switch ($this->args[1]) {
                 case "list":
                     // Get list of users
-                    return $this->list($this->exec("reflect/Key?id={$this->args[2]}", Method::GET));
+                    return $this->list($this->exec("reflect/key?id={$this->args[2]}", Method::GET));
 
                 case "add":
                     if (empty($this->args[2])) {
@@ -208,7 +195,7 @@
                     }
 
                     // User does not exist
-                    $user = $this->exec("reflect/User?id={$this->args[2]}", Method::GET);
+                    $user = $this->exec("reflect/user?id={$this->args[2]}", Method::GET);
                     if (!empty($user[0]["errorCode"])) {
                         return $this->error($user);
                     };
@@ -216,25 +203,25 @@
                     // Requesting to generate or reactivate a key with specific id
                     if (!empty($this->args[3])) {
                         // Check if key key exists
-                        $key = $this->exec("reflect/Key?id={$this->args[3]}", Method::GET);
+                        $key = $this->exec("reflect/key?id={$this->args[3]}", Method::GET);
                         if (empty($key["errorCode"])) {
                             // Reactivate key if exists
                             if ($key["active"] === 0) {
-                                return $this->echo($this->exec("reflect/Key?id={$this->args[2]}", Method::PATCH, [
+                                return $this->echo($this->exec("reflect/key?id={$this->args[2]}", Method::PATCH, [
                                     "active" => true
                                 ]));
                             }
                         }
 
                         // Add named key
-                        return $this->echo($this->exec("reflect/Key", Method::POST, [
+                        return $this->echo($this->exec("reflect/key", Method::POST, [
                             "id"   => $this->args[3],
                             "user" => $this->args[2]
                         ]));
                     }
 
                     // Generate a new key for user
-                    return $this->echo($this->exec("reflect/Key", Method::POST, [
+                    return $this->echo($this->exec("reflect/key", Method::POST, [
                         "user" => $this->args[2],
                     ]));
 
@@ -244,13 +231,13 @@
                     }
 
                     // Check that the key exists
-                    $key = $this->exec("reflect/Key?id={$this->args[2]}", Method::GET);
+                    $key = $this->exec("reflect/key?id={$this->args[2]}", Method::GET);
                     if (!empty($key[0]["errorCode"])) {
                         return $this->error($key);
                     };
 
                     // Delete key by id
-                    return $this->echo($this->exec("reflect/Key?id={$this->args[2]}", Method::DELETE));
+                    return $this->echo($this->exec("reflect/key?id={$this->args[2]}", Method::DELETE));
 
                 case "set":
                     if (empty($this->args[2])) {
@@ -265,7 +252,7 @@
                                 return $this->error("Expected: <timestamp> <api_key>");
                             }
 
-                            return $this->echo($this->exec("reflect/Key?id={$this->args[4]}"), Method::PATCH, [
+                            return $this->echo($this->exec("reflect/key?id={$this->args[4]}"), Method::PATCH, [
                                 "expires" => $this->args[3]
                             ]);
 
@@ -274,7 +261,7 @@
                     }
 
                 default:
-                    return $this->error("No operation");
+                    return $this->error("Expected key operation", "reflect key <list/add/remove/set>");
             }
         }
 
@@ -282,16 +269,14 @@
             switch ($this->args[1]) {
                 case "list":
                     // Get all ACL records
-                    $endpoints = $this->exec("reflect/Acl", Method::GET);
+                    $endpoints = $this->exec("reflect/acl", Method::GET);
                     return $this->list($endpoints);
 
                 case "grant":
                 case "deny":
                     if (empty($this->args[2]) || empty($this->args[3]) || empty($this->args[4])) {
-                        return $this->error("Expected: <endpoint> <verb> <api_key>");
+                        return $this->error("Expected ACL options", "reflect acl {$this->args[1]} <endpoint> <verb> <api_key>");
                     }
-
-                    $this->args[2] = $this::uc_endpoint($this->args[2]);
 
                     // Id is a SHA256 hash of all ACL fields truncated to 32 chars
                     $hash = substr(hash("sha256", implode("", [
@@ -302,17 +287,17 @@
 
                     // Request is to remove an existing ACL record
                     if ($this->args[1] === "deny") {
-                        return $this->echo($this->exec("reflect/Acl?id=${hash}", Method::DELETE));
+                        return $this->echo($this->exec("reflect/acl?id=${hash}", Method::DELETE));
                     }
 
-                    return $this->echo($this->exec("reflect/Acl", Method::POST, [
+                    return $this->echo($this->exec("reflect/acl", Method::POST, [
                         "api_key"  => $this->args[4],
                         "endpoint" => $this->args[2],
                         "method"   => $this->args[3]
                     ]));
 
                 default:
-                    return $this->error("No operation");
+                    return $this->error("Expected ACL operation", "reflect acl <list/grant/deny>");
             }
         }
     }
