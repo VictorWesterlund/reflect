@@ -50,18 +50,24 @@ Assuming you have all that set up, here's how to get Reflect up and running on D
 1. **Clone this repo**
 
    ```
-   $ git clone https://github.com/viwes/reflect
+   git clone https://github.com/viwes/reflect
+   ``` 
+
+2. **Install composer dependencies**
+
+   ```
+   composer install
    ```
    
-2. **Set environment variabes**
+3. **Set environment variabes**
    
    Copy the `.env.example.ini` file to `.env.ini` and update values as needed.
    
-3. **Import database**
+4. **Import database**
 
    Download `db.sql` from the releases page and import it into a MariaDB database.
    
-3. **That should be it**
+5. **That should be it**
 
    Follow the guides for HTTP and/or UNIX sockets depending on which (or both) you plan to set up.
    
