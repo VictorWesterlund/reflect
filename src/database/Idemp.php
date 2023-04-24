@@ -1,6 +1,6 @@
 <?php
 
-    require_once Path::reflect(Path::$driver_sqlite);
+    use libsqlitedriver\SQLite as SQLiteDriver;
 
     class IdempDb extends SQLiteDriver {
 
