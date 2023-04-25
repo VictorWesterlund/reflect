@@ -21,7 +21,7 @@
 
         public function __construct() {
             parent::__construct(ContentType::JSON);
-            $this->db = new AuthDB(ConType::INTERNAL);
+            $this->db = new AuthDB(Connection::INTERNAL);
         }
 
         // Get order status by order reference

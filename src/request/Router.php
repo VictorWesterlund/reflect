@@ -3,7 +3,7 @@
     require_once Path::reflect("src/database/Auth.php");
 
     // Client/server connection medium
-    enum ConType {
+    enum Connection {
         case AF_UNIX;
         case HTTP;
         case INTERNAL;
@@ -17,10 +17,10 @@
         // A request initiator must provide the connection type
         // it wish to use. This allows the router to reply in a
         // correct manner.
-        public function __construct(private ConType $con) {
+        public function __construct(private Connection $con) {
             // Set HTTP as the default connection type and JSON as
             // the default response Content-Type
-            if ($this->con === ConType::HTTP) {
+            if ($this->con === Connection::HTTP) {
                 header("Content-Type: application/json");
             }
 
@@ -62,15 +62,15 @@
         // errors with the request itself or for control requests
         // such as HTTP method "OPTIONS".
         private function exit_here(mixed $msg, int $code = 200) {
-            if ($this->con === ConType::INTERNAL) {
+            if ($this->con === Connection::INTERNAL) {
                 return $msg;
             }
 
-            if ($this->con === ConType::AF_UNIX) {
+            if ($this->con === Connection::AF_UNIX) {
                 return $_ENV["SOCKET_STDOUT"](json_encode($msg), $code);
             }
 
-            // For ConType::HTTP
+            // For Connection::HTTP
             http_response_code($code);
             exit(json_encode($msg));
         }
@@ -122,13 +122,16 @@
                 return $this->exit_here_with_error("Service unavailable", 503, "Endpoint is not configured yet");
             }
 
+            // Initialize API endpoint
             $api = new $class();
+            // Pass connection type
+            $api->set_connection($this->con);
 
             // Check input constraints for API before running endpoint method
             if (in_array($_SERVER["REQUEST_METHOD"], ["POST", "PUT", "PATCH"])) {
                 // Parse JSON payload from client into superglobal.
                 // $_POST will be used for all methods containing a client payload.
-                if ($this->con !== ConType::INTERNAL && !empty($_SERVER["HTTP_CONTENT_TYPE"]) && $_SERVER["HTTP_CONTENT_TYPE"] === "application/json") {
+                if ($this->con !== Connection::INTERNAL && !empty($_SERVER["HTTP_CONTENT_TYPE"]) && $_SERVER["HTTP_CONTENT_TYPE"] === "application/json") {
                     $_POST = JSON::load("php://input") ?? [];
                 }
 
