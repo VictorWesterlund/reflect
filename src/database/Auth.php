@@ -1,8 +1,8 @@
 <?php
 
-    require_once Path::reflect(Path::$driver_mariadb);
+    use libmysqldriver\MySQL as MySQLDriver;
 
-    class AuthDB extends MariaDBDriver {
+    class AuthDB extends MySQLDriver {
         // This is the default fallback key used when no key is provided
         // with the request (anonymous) and when a provided key lacks
         // access to a particular resource (forbidden).
@@ -11,8 +11,13 @@
         // I.e request using API->call() or Reflect's meta-endpoints.
         public static $key_internal = "INTERNAL";
 
-        public function __construct(private ConType $con) {
-            parent::__construct(...$_ENV["mariadb"]);
+        public function __construct(private Connection $con) {
+            parent::__construct(
+                $_ENV["mysql_host"],
+                $_ENV["mysql_user"],
+                $_ENV["mysql_pass"],
+                $_ENV["mysql_db"]
+            );
         }
 
         // Return bool user id is enabled
@@ -70,7 +75,7 @@
             }
 
             // Internal connections are always allowed
-            if (in_array($this->con, [ConType::INTERNAL, ConType::AF_UNIX])) {
+            if (in_array($this->con, [Connection::INTERNAL, Connection::AF_UNIX])) {
                 return true;
             }
 

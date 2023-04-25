@@ -4,9 +4,6 @@
 	// A tailing / is appended to each return to prevent adjacent dirname
 	// attacks from API controllers.
 	final class Path {
-		public static $driver_mariadb = "src/database/drivers/556a74ed1a50cd7d2e3e7b2cc7e40706/MariaDB.php";
-		public static $driver_sqlite  = "src/database/drivers/9f50ea1a5be726e610dc2fe134926869/SQLite.php";
-
 		// Get path to or relative path from the Reflect install directory
 		public static function reflect(string $crumbs = ""): string {
 			return dirname(__DIR__) . "/" . $crumbs;
@@ -36,4 +33,9 @@
 	// Merge environment variables from user endpoints with existing
 	if (file_exists(Path::root(".env.ini"))) {
 		$_ENV = array_merge($_ENV, parse_ini_file(Path::root(".env.ini"), true));
+	}
+
+	// Load composer dependencies from userspace if exists
+	if (file_exists(Path::root("vendor/autoload.php"))) {
+		require_once Path::root("vendor/autoload.php");
 	}

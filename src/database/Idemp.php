@@ -1,6 +1,6 @@
 <?php
 
-    require_once Path::reflect(Path::$driver_sqlite);
+    use libsqlitedriver\SQLite as SQLiteDriver;
 
     class IdempDb extends SQLiteDriver {
 
@@ -30,10 +30,9 @@
 
         // Get path to SQLite database file
         private function get_db_name(): string {
-            // Use CRC32 of concatinated environment variables as database name to store
-            // used idempotency keys. We're using the mariadb values as if another endpoints
-            // directory is used on the same machine, the database settings should change.
-            $db = crc32(implode("", array_values($_ENV["mariadb"])));
+            // Use CRC32 of the configured ACL database as name for the idempotency database.
+            // This allows the same idempotency key to be used for separate databases and hosts
+            $db = crc32(implode("", [$_ENV["mysql_host"], $_ENV["mysql_db"]]));
 
             // Build path from root and database name with extension
             return "{$_ENV["idempotency"]}${db}.db";
