@@ -1,8 +1,8 @@
 <?php
 
-    require_once Path::reflect(Path::$driver_mariadb);
+    use libmysqldriver\MySQL as MySQLDriver;
 
-    class AuthDB extends MariaDBDriver {
+    class AuthDB extends MySQLDriver {
         // This is the default fallback key used when no key is provided
         // with the request (anonymous) and when a provided key lacks
         // access to a particular resource (forbidden).

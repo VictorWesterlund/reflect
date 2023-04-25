@@ -1,0 +1,56 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
+        "This file is @generated automatically"
+    ],
+    "content-hash": "808af43d8846a421d3b3a19d7da01f65",
+    "packages": [
+        {
+            "name": "victorwesterlund/libmysqldriver",
+            "version": "1.0.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/VictorWesterlund/php-libmysqldriver.git",
+                "reference": "bbfb31707a8a7c1f71cc844aedac8fd346324432"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/VictorWesterlund/php-libmysqldriver/zipball/bbfb31707a8a7c1f71cc844aedac8fd346324432",
+                "reference": "bbfb31707a8a7c1f71cc844aedac8fd346324432",
+                "shasum": ""
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "libmysqldriver\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-3.0-only"
+            ],
+            "authors": [
+                {
+                    "name": "Victor Westerlund",
+                    "email": "victor.vesterlund@gmail.com"
+                }
+            ],
+            "description": "Abstraction library for common mysqli features",
+            "support": {
+                "issues": "https://github.com/VictorWesterlund/php-libmysqldriver/issues",
+                "source": "https://github.com/VictorWesterlund/php-libmysqldriver/tree/1.0.2"
+            },
+            "time": "2023-04-24T15:14:46+00:00"
+        }
+    ],
+    "packages-dev": [],
+    "aliases": [],
+    "minimum-stability": "stable",
+    "stability-flags": [],
+    "prefer-stable": false,
+    "prefer-lowest": false,
+    "platform": [],
+    "platform-dev": [],
+    "plugin-api-version": "2.0.0"
+}

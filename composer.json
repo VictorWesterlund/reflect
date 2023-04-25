@@ -1,0 +1,5 @@
+{
+    "require": {
+        "victorwesterlund/libmysqldriver": "^1.0"
+    }
+}
