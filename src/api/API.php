@@ -25,6 +25,7 @@
     class API {
         // An endpoint must specify a valid Content-Type to use the standard outputs of this class.
         public function __construct(private ContentType $type) {
+            $this->con = null;
             $this->type = $type;
         }
 
@@ -38,6 +39,11 @@
             return (new IdempDb())->set($_POST[IdempDb::$key]);
         }
 
+        // Set the current connection method
+        public function set_connection(Connection $con) {
+            $this->con = $con;
+        }
+
         // Request body must match certain requirements since we're changing data now and wish to be more careful.
         // Returns true if constraints matched or array explaining what went wrong.
         public function input_constraints(): bool|array {
@@ -46,8 +52,10 @@
                 return ["Payload required", 400, "The request body can not be empty"];
             }
 
-            // Validate and spend idempotency key if enabled for environment
-            if (!empty($_ENV["idempotency"])) {
+            // Validate and spend idempotency key if enabled for environment and if the connection isn't INTERNAL.
+            // INTERNAL connections don't need additional idempotency validation as the upstream connection already has
+            // idempotency validation applied.
+            if (!empty($_ENV["idempotency"]) && $this->con !== Connection::INTERNAL) {
                 $idemp = $this->idempotent_ok();
 
                 if (!$idemp) {
@@ -161,7 +169,7 @@
             $_ENV["INTERNAL_STDOUT"] = true;
 
             // Start "proxied" Router. Connection type INTERNAL will make its API->stdout() and API->stderr() return instead of exit.
-            $resp = (new Router(ConType::INTERNAL))->main();
+            $resp = (new Router(Connection::INTERNAL))->main();
 
             // Restore all superglobals. This will discard any modifications to superglobals prior to method call.
             $snapshot->restore();

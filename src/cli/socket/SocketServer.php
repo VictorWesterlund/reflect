@@ -41,7 +41,7 @@
             isset($uri["query"]) ? parse_str($uri["query"], $_GET) : null; // Set request parameters
             
             // Initialize request router
-            (new Router(ConType::AF_UNIX))->main();
+            (new Router(Connection::AF_UNIX))->main();
         }
 
         // Stop server

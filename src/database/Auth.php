@@ -11,7 +11,7 @@
         // I.e request using API->call() or Reflect's meta-endpoints.
         public static $key_internal = "INTERNAL";
 
-        public function __construct(private ConType $con) {
+        public function __construct(private Connection $con) {
             parent::__construct(...$_ENV["mariadb"]);
         }
 
@@ -70,7 +70,7 @@
             }
 
             // Internal connections are always allowed
-            if (in_array($this->con, [ConType::INTERNAL, ConType::AF_UNIX])) {
+            if (in_array($this->con, [Connection::INTERNAL, Connection::AF_UNIX])) {
                 return true;
             }
 
