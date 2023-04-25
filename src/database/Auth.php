@@ -12,7 +12,12 @@
         public static $key_internal = "INTERNAL";
 
         public function __construct(private Connection $con) {
-            parent::__construct(...$_ENV["mariadb"]);
+            parent::__construct(
+                $_ENV["mysql_host"],
+                $_ENV["mysql_user"],
+                $_ENV["mysql_pass"],
+                $_ENV["mysql_db"]
+            );
         }
 
         // Return bool user id is enabled
