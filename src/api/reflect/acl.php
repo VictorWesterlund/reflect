@@ -41,13 +41,13 @@
 
         public function _POST() {
             // Check endpoint is valid
-            $endpoint = $this->call("reflect/Endpoint?id={$_POST["endpoint"]}", Method::GET);
+            $endpoint = $this->call("reflect/endpoint?id={$_POST["endpoint"]}", Method::GET);
             if (!empty($endpoint["errorCode"])) {
                 return $this->stderr("Unprocessable entity", 422, $endpoint);
             }
 
             // Check key is valid
-            $key = $this->call("reflect/Key?id={$_POST["api_key"]}", Method::GET);
+            $key = $this->call("reflect/key?id={$_POST["api_key"]}", Method::GET);
             if (!empty($key["errorCode"])) {
                 return $this->stderr("Unprocessable entity", 422, $key);
             }
@@ -68,7 +68,7 @@
             ])), -32);
 
             // Check if ACL rule already exists
-            if (empty($this->call("reflect/Acl?id=${hash}", Method::GET)["errorCode"])) {
+            if (empty($this->call("reflect/acl?id=${hash}", Method::GET)["errorCode"])) {
                 return $this->stderr("Already granted", 400, "This ACL rule has already been set");
             }
 
