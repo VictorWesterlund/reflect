@@ -3,11 +3,13 @@
     namespace Reflect\CLI;
 
     use \Reflect\Path;
+    use function \Reflect\Call;
     use \Reflect\CLI\CLI;
     use \Reflect\Request\Method;
 
     require_once Path::reflect("src/cli/CLI.php");
     require_once Path::reflect("src/request/Router.php");
+    require_once Path::reflect("src/api/builtin/Call.php");
 
     class ReflectAdminCLI extends CLI {
         public function __construct(array $args) {
@@ -37,17 +39,11 @@
             }
         }
 
-        // Make an internal API request to reflect endpoints
-        private function exec(string $endpoint, Method $method, mixed $payload = null) {
-            $api = new API(ContentType::JSON);
-            return $api->call(...func_get_args());
-        }
-
         private function endpoint() {
             switch ($this->args[1]) {
                 case "list":
                     // Get list of endpoints
-                    $endpoints = $this->exec("reflect/endpoint", Method::GET);
+                    $endpoints = Call("reflect/endpoint", Method::GET);
                     $endpoints = array_column($endpoints, "endpoint");
 
                     // Format list of endpoints
@@ -83,7 +79,7 @@
                     }
 
                     // Check that the endpoint does not already exist.
-                    $check = $this->exec("reflect/endpoint?id=${endpoint}", Method::GET);
+                    $check = Call("reflect/endpoint?id=${endpoint}", Method::GET);
 
                     // We expect a 404 response from the endpoint since we're attemting to
                     // create it. Any other errorCode should be treated as an error.
@@ -95,7 +91,7 @@
                     if (!empty($check[0])) {
                         // Reactivate endpoint if it already exists
                         if ($check[0]["active"] === 0) {
-                            return $this->echo($this->exec("reflect/endpoint?id=${endpoint}", Method::PATCH, [
+                            return $this->echo(Call("reflect/endpoint?id=${endpoint}", Method::PATCH, [
                                 "active" => true
                             ]));
                         }
@@ -103,7 +99,7 @@
                         return $this->error("Endpoint already added");
                     }
 
-                    return $this->echo($this->exec("reflect/endpoint", Method::POST, [
+                    return $this->echo(Call("reflect/endpoint", Method::POST, [
                         "endpoint" => $endpoint
                     ]));
 
@@ -116,7 +112,7 @@
                         return $this->error("Expected endpoint name", "reflect endpoint remove <endpoint>");
                     }
 
-                    $check = $this->exec("reflect/endpoint?id=${endpoint}", Method::GET);
+                    $check = Call("reflect/endpoint?id=${endpoint}", Method::GET);
 
                     // Endpoint does not exist
                     if (!empty($check["errorCode"])) {
@@ -124,7 +120,7 @@
                     };
 
                     // Delete endpoint by id
-                    return $this->echo($this->exec("reflect/endpoint?id=${endpoint}", Method::DELETE));
+                    return $this->echo(Call("reflect/endpoint?id=${endpoint}", Method::DELETE));
 
                 default:
                     return $this->error("Expected endpoint operation", "reflect endpoint <list/add/remove>");
@@ -134,7 +130,7 @@
         private function user() {
             switch ($this->args[1]) {
                 case "list":
-                    return $this->list($this->exec("reflect/user?id={$this->args[2]}", Method::GET));
+                    return $this->list(Call("reflect/user?id={$this->args[2]}", Method::GET));
 
                 case "add":
                     if (empty($this->args[2])) {
@@ -142,7 +138,7 @@
                     }
 
                     // Check that the user does not already exist.
-                    $user = $this->exec("reflect/user?id={$this->args[2]}", Method::GET);
+                    $user = Call("reflect/user?id={$this->args[2]}", Method::GET);
 
                     // We expect a 404 response from the endpoint since we're attemting to
                     // create it. Any other errorCode should be treated as an error.
@@ -154,7 +150,7 @@
                     if (!empty($user[0])) {
                         // Reactivate user if already exists
                         if ($user[0]["active"] === 0) {
-                            return $this->echo($this->exec("reflect/user", Method::PUT, [
+                            return $this->echo(Call("reflect/user", Method::PUT, [
                                 "id"     => $this->args[2],
                                 "active" => true
                             ]));
@@ -163,7 +159,7 @@
                         return $this->echo("User already added");
                     }
 
-                    return $this->echo($this->exec("reflect/user", Method::POST, [
+                    return $this->echo(Call("reflect/user", Method::POST, [
                         "id"     => $this->args[2],
                         "active" => true
                     ]));
@@ -174,7 +170,7 @@
                     }
 
                     // Check that the user does not already exist.
-                    $user = $this->exec("reflect/user?id={$this->args[2]}", Method::GET);
+                    $user = Call("reflect/user?id={$this->args[2]}", Method::GET);
 
                     // User does not exist
                     if (!empty($user[0]["errorCode"]) && $user[0]["errorCode"] !== 404) {
@@ -182,7 +178,7 @@
                     };
 
                     // Delete user by id
-                    return $this->echo($this->exec("reflect/user?id={$this->args[2]}", Method::DELETE));
+                    return $this->echo(Call("reflect/user?id={$this->args[2]}", Method::DELETE));
 
                 default:
                     return $this->error("Expected user operation", "reflect user <list/add/remove>");
@@ -193,7 +189,7 @@
             switch ($this->args[1]) {
                 case "list":
                     // Get list of users
-                    return $this->list($this->exec("reflect/key?id={$this->args[2]}", Method::GET));
+                    return $this->list(Call("reflect/key?id={$this->args[2]}", Method::GET));
 
                 case "add":
                     if (empty($this->args[2])) {
@@ -201,7 +197,7 @@
                     }
 
                     // User does not exist
-                    $user = $this->exec("reflect/user?id={$this->args[2]}", Method::GET);
+                    $user = Call("reflect/user?id={$this->args[2]}", Method::GET);
                     if (!empty($user[0]["errorCode"])) {
                         return $this->error($user);
                     };
@@ -209,25 +205,25 @@
                     // Requesting to generate or reactivate a key with specific id
                     if (!empty($this->args[3])) {
                         // Check if key key exists
-                        $key = $this->exec("reflect/key?id={$this->args[3]}", Method::GET);
+                        $key = Call("reflect/key?id={$this->args[3]}", Method::GET);
                         if (empty($key["errorCode"])) {
                             // Reactivate key if exists
                             if ($key["active"] === 0) {
-                                return $this->echo($this->exec("reflect/key?id={$this->args[2]}", Method::PATCH, [
+                                return $this->echo(Call("reflect/key?id={$this->args[2]}", Method::PATCH, [
                                     "active" => true
                                 ]));
                             }
                         }
 
                         // Add named key
-                        return $this->echo($this->exec("reflect/key", Method::POST, [
+                        return $this->echo(Call("reflect/key", Method::POST, [
                             "id"   => $this->args[3],
                             "user" => $this->args[2]
                         ]));
                     }
 
                     // Generate a new key for user
-                    return $this->echo($this->exec("reflect/key", Method::POST, [
+                    return $this->echo(Call("reflect/key", Method::POST, [
                         "user" => $this->args[2],
                     ]));
 
@@ -237,13 +233,13 @@
                     }
 
                     // Check that the key exists
-                    $key = $this->exec("reflect/key?id={$this->args[2]}", Method::GET);
+                    $key = Call("reflect/key?id={$this->args[2]}", Method::GET);
                     if (!empty($key[0]["errorCode"])) {
                         return $this->error($key);
                     };
 
                     // Delete key by id
-                    return $this->echo($this->exec("reflect/key?id={$this->args[2]}", Method::DELETE));
+                    return $this->echo(Call("reflect/key?id={$this->args[2]}", Method::DELETE));
 
                 case "set":
                     if (empty($this->args[2])) {
@@ -258,7 +254,7 @@
                                 return $this->error("Expected: <timestamp> <api_key>");
                             }
 
-                            return $this->echo($this->exec("reflect/key?id={$this->args[4]}"), Method::PATCH, [
+                            return $this->echo(Call("reflect/key?id={$this->args[4]}"), Method::PATCH, [
                                 "expires" => $this->args[3]
                             ]);
 
@@ -275,7 +271,7 @@
             switch ($this->args[1]) {
                 case "list":
                     // Get all ACL records
-                    $endpoints = $this->exec("reflect/acl", Method::GET);
+                    $endpoints = Call("reflect/acl", Method::GET);
                     return $this->list($endpoints);
 
                 case "grant":
@@ -293,10 +289,10 @@
 
                     // Request is to remove an existing ACL record
                     if ($this->args[1] === "deny") {
-                        return $this->echo($this->exec("reflect/acl?id=${hash}", Method::DELETE));
+                        return $this->echo(Call("reflect/acl?id=${hash}", Method::DELETE));
                     }
 
-                    return $this->echo($this->exec("reflect/acl", Method::POST, [
+                    return $this->echo(Call("reflect/acl", Method::POST, [
                         "api_key"  => $this->args[4],
                         "endpoint" => $this->args[2],
                         "method"   => $this->args[3]

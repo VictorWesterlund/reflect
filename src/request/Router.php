@@ -4,11 +4,16 @@
 
     use const \Reflect\ENV;
     use \Reflect\Path;
+    use \Reflect\Response;
     use \Reflect\Database\AuthDB;
     use \Reflect\Database\IdempDB;
 
     require_once Path::reflect("src/database/Auth.php");
     require_once Path::reflect("src/database/Idemp.php");
+
+    // These builtins should be exposed to endpoints in userspace
+    require_once Path::reflect("src/api/builtin/Response.php");
+    require_once Path::reflect("src/api/builtin/Call.php");
 
     // Client/server connection medium
     enum Connection {
@@ -36,12 +41,6 @@
         // it wish to use. This allows the router to reply in a
         // correct manner.
         public function __construct(private Connection $con) {
-            // Set HTTP as the default connection type and JSON as
-            // the default response Content-Type
-            if ($this->con === Connection::HTTP) {
-                header("Content-Type: application/json");
-            }
-
             // Parse request method string into Enum
             $this->method = Method::tryFrom($_SERVER["REQUEST_METHOD"]) ?? $this->exit_here("Method not allowed", 405);
 
@@ -122,20 +121,15 @@
                 // Internal endpoints are stored as named files
                 : Path::reflect("src/api/{$this->endpoint}/{$this->method->value}.php");
 
-            // Check that the endpoint exists
-            if (!file_exists($file)) {
-                return $this->exit_here_with_error("No endpoint", 404, "The requested endpoint does not exist");
-            }
-
             // Return available endpoints for API key and exit here
             // if the method is OPTIONS.
             if ($this->method === Method::OPTIONS) {
-                return $this->exit_here($this->get_options($this->endpoint), 200);
+                return new Response($this->get_options($this->endpoint), 200);
             }
 
-            // Check if user has permission to call this endpoint
-            if (!$this->check($this->endpoint, $this->method)) {
-                return $this->exit_here_with_error("Forbidden", 403, "You do not have permission to call this endpoint. Send OPTIONS request to this endpoint for list of allowed methods");
+            // Check that the endpoint exists and that the user is allowed to call it
+            if (!file_exists($file) || !$this->check($this->endpoint, $this->method)) {
+                return new Response(["No endpoint", "Endpoint not found or insufficient permissions for the requested method."], 404);
             }
 
             // Import endpoint code from file
@@ -144,7 +138,9 @@
             // Instantiate default endpoint class
             $class = $this->get_endpoint_class();
             if (!class_exists($class)) {
-                return $this->exit_here_with_error("Service unavailable", 503, "Endpoint is not configured yet");
+                // Return 503 if the class name of the requested endpoint does not match the path.
+                // Eg. endpoint '/foo/bar' should have a class with the name 'FooBar' inside a <METHOD>.php file
+                return new Response(["Service unavailable", "Endpoint is not configured yet."], 503);
             }
 
             // Parse JSON payload from client into superglobal.
@@ -153,27 +149,7 @@
                 $this->load_json_payload();
             }
 
-            // Initialize API endpoint
-            $api = new $class();
-
-            // Check input constraints for API before running endpoint method
-            if (in_array($_SERVER["REQUEST_METHOD"], ["POST", "PUT", "PATCH"])) { 
-                if ($this->con !== Connection::INTERNAL && !empty($_SERVER["HTTP_CONTENT_TYPE"]) && $_SERVER["HTTP_CONTENT_TYPE"] === "application/json") {
-                    $_POST = JSON::load("php://input") ?? [];
-                }
-
-                $constr = $api->input_constraints();
-                if ($constr !== true) {
-                    return $this->exit_here_with_error(...$constr);
-                }
-            }
-
-            // Call method from imported class (_GET(), _POST() etc.)
-            $method = "_{$_SERVER["REQUEST_METHOD"]}";
-            if (!method_exists($api, $method)) {
-                return $this->exit_here_with_error("Method not allowed", 405, "The endpoint does not implement the method sent with your request");
-            }
-
-            return $api->$method();
+            // Run main() method from endpoint class
+            return (new $class())->main();
         }
     }

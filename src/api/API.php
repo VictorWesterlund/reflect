@@ -10,7 +10,7 @@
     require_once Path::reflect("src/database/Idemp.php");
     require_once Path::reflect("src/api/helpers/RuleMatcher.php");
     require_once Path::reflect("src/api/helpers/GlobalSnapshot.php");
-    require_once Path::reflect("src/api/classes/Stdout.php");
+    require_once Path::reflect("src/api/builtin/Stdout.php");
 
     // Allowed response Content-Types
     enum ContentType {
