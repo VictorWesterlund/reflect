@@ -1,12 +1,30 @@
 <?php
 
+    namespace Reflect\Request;
+
+    use const \Reflect\ENV;
+    use \Reflect\Path;
+    use \Reflect\Database\AuthDB;
+    use \Reflect\Database\IdempDB;
+
     require_once Path::reflect("src/database/Auth.php");
+    require_once Path::reflect("src/database/Idemp.php");
 
     // Client/server connection medium
     enum Connection {
         case AF_UNIX;
         case HTTP;
         case INTERNAL;
+    }
+
+    // Allowed HTTP verbs
+    enum Method: string {
+        case GET     = "GET";
+        case POST    = "POST";
+        case PUT     = "PUT";
+        case DELETE  = "DELETE";
+        case PATCH   = "PATCH";
+        case OPTIONS = "OPTIONS";
     }
 
     // This is the dynamic request router used to translate a
@@ -24,11 +42,19 @@
                 header("Content-Type: application/json");
             }
 
+            // Parse request method string into Enum
+            $this->method = Method::tryFrom($_SERVER["REQUEST_METHOD"]) ?? $this->exit_here("Method not allowed", 405);
+
             $this->endpoint = $this::get_endpoint();
 
             // Open connection to AuthDB
             $this->con = $con;
             parent::__construct($this->con);
+        }
+
+        // Polyfill for loading parameters from a JSON request body into $_POST
+        private static function load_json_payload() {
+            return $_POST = json_decode(file_get_contents("php://input"), true) ?? [];
         }
 
         // Get the requested endpoint from request URL
@@ -54,8 +80,8 @@
             // Capitalize each crumb
             $path = array_map(fn($crumb) => ucfirst($crumb), $path);
 
-            // Return path as _PascalCaseFromCrumbs (with leading "_")
-            return "_" . implode("", $path);
+            // Return path as PascalCaseFromCrumbs
+            return implode("", $path);
         }
 
         // Exit with output on a router level. This is used for
@@ -67,7 +93,7 @@
             }
 
             if ($this->con === Connection::AF_UNIX) {
-                return $_ENV["SOCKET_STDOUT"](json_encode($msg), $code);
+                return $_ENV[ENV]["SOCKET_STDOUT"](json_encode($msg), $code);
             }
 
             // For Connection::HTTP
@@ -89,13 +115,12 @@
         // permissions against AuthDB, and initializing the endpoint handler class.
         // This is the default request flow.
         public function main() {
-            $test = $this->endpoint;
             // Request URLs starting with "reflect/" are reserved and should read from the internal endpoints located at /src/api/
             $file = substr($this->endpoint, 0, 8) !== "reflect/"
                 // User endpoints are kept in folders with 'index.php' as the file to run
-                ? Path::root("api/{$this->endpoint}/index.php")
+                ? Path::root("endpoints/{$this->endpoint}/{$this->method->value}.php")
                 // Internal endpoints are stored as named files
-                : Path::reflect("src/api/{$this->endpoint}.php");
+                : Path::reflect("src/api/{$this->endpoint}/{$this->method->value}.php");
 
             // Check that the endpoint exists
             if (!file_exists($file)) {
@@ -104,12 +129,12 @@
 
             // Return available endpoints for API key and exit here
             // if the method is OPTIONS.
-            if ($_SERVER["REQUEST_METHOD"] === "OPTIONS") {
+            if ($this->method === Method::OPTIONS) {
                 return $this->exit_here($this->get_options($this->endpoint), 200);
             }
 
             // Check if user has permission to call this endpoint
-            if (!$this->check($this->endpoint, $_SERVER["REQUEST_METHOD"])) {
+            if (!$this->check($this->endpoint, $this->method)) {
                 return $this->exit_here_with_error("Forbidden", 403, "You do not have permission to call this endpoint. Send OPTIONS request to this endpoint for list of allowed methods");
             }
 
@@ -122,15 +147,17 @@
                 return $this->exit_here_with_error("Service unavailable", 503, "Endpoint is not configured yet");
             }
 
+            // Parse JSON payload from client into superglobal.
+            // $_POST will be used for all methods containing a client payload.
+            if ($this->con !== Connection::INTERNAL && !empty($_SERVER["HTTP_CONTENT_TYPE"]) && $_SERVER["HTTP_CONTENT_TYPE"] === "application/json") {
+                $this->load_json_payload();
+            }
+
             // Initialize API endpoint
             $api = new $class();
-            // Pass connection type
-            $api->set_connection($this->con);
 
             // Check input constraints for API before running endpoint method
-            if (in_array($_SERVER["REQUEST_METHOD"], ["POST", "PUT", "PATCH"])) {
-                // Parse JSON payload from client into superglobal.
-                // $_POST will be used for all methods containing a client payload.
+            if (in_array($_SERVER["REQUEST_METHOD"], ["POST", "PUT", "PATCH"])) { 
                 if ($this->con !== Connection::INTERNAL && !empty($_SERVER["HTTP_CONTENT_TYPE"]) && $_SERVER["HTTP_CONTENT_TYPE"] === "application/json") {
                     $_POST = JSON::load("php://input") ?? [];
                 }

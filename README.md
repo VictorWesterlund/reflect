@@ -10,8 +10,8 @@ An endpoint in Reflect is a *single PHP file* which contains a class of methods 
 ```php
 <?php
 
-   require_once Path::api();
-   require_once Path::endpoint("controller/MyExternalClass.php");
+   require_once Reflect::api();
+   require_once Reflect::endpoint("controller/MyExternalClass.php");
 
    class Ping extends API {
       public class __construct() {

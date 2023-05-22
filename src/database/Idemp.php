@@ -1,6 +1,6 @@
 <?php
 
-    use libsqlitedriver\SQLite as SQLiteDriver;
+    use \libsqlitedriver\SQLite as SQLiteDriver;
 
     class IdempDb extends SQLiteDriver {
 
@@ -32,10 +32,10 @@
         private function get_db_name(): string {
             // Use CRC32 of the configured ACL database as name for the idempotency database.
             // This allows the same idempotency key to be used for separate databases and hosts
-            $db = crc32(implode("", [$_ENV["mysql_host"], $_ENV["mysql_db"]]));
+            $db = crc32(implode("", [$_ENV[ENV]["mysql_host"], $_ENV[ENV]["mysql_db"]]));
 
             // Build path from root and database name with extension
-            return "{$_ENV["idempotency"]}${db}.db";
+            return "{$_ENV[ENV]["idempotency"]}${db}.db";
         }
 
         // Returns true if a provided UUID exists in database

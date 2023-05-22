@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "808af43d8846a421d3b3a19d7da01f65",
+    "content-hash": "d3ebdd47596b2554b343b327c398f003",
     "packages": [
         {
             "name": "victorwesterlund/libmysqldriver",
@@ -42,6 +42,43 @@
                 "source": "https://github.com/VictorWesterlund/php-libmysqldriver/tree/1.0.2"
             },
             "time": "2023-04-24T15:14:46+00:00"
+        },
+        {
+            "name": "victorwesterlund/libsqlitedriver",
+            "version": "1.0.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/VictorWesterlund/php-libsqlitedriver.git",
+                "reference": "cc3a5493c1b8b3b104d39a2fbf7df841cfe486d1"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/VictorWesterlund/php-libsqlitedriver/zipball/cc3a5493c1b8b3b104d39a2fbf7df841cfe486d1",
+                "reference": "cc3a5493c1b8b3b104d39a2fbf7df841cfe486d1",
+                "shasum": ""
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "libsqlitedriver\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-3.0-only"
+            ],
+            "authors": [
+                {
+                    "name": "Victor Westerlund",
+                    "email": "victor.vesterlund@gmail.com"
+                }
+            ],
+            "description": "Abstraction library for common SQLite features",
+            "support": {
+                "issues": "https://github.com/VictorWesterlund/php-libsqlitedriver/issues",
+                "source": "https://github.com/VictorWesterlund/php-libsqlitedriver/tree/1.0.2"
+            },
+            "time": "2023-04-25T11:02:56+00:00"
         }
     ],
     "packages-dev": [],

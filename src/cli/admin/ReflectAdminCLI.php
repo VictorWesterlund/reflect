@@ -1,7 +1,13 @@
 <?php
 
+    namespace Reflect\CLI;
+
+    use \Reflect\Path;
+    use \Reflect\CLI\CLI;
+    use \Reflect\Request\Method;
+
     require_once Path::reflect("src/cli/CLI.php");
-    require_once Path::reflect("src/api/API.php");
+    require_once Path::reflect("src/request/Router.php");
 
     class ReflectAdminCLI extends CLI {
         public function __construct(array $args) {

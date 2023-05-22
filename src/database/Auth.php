@@ -1,6 +1,13 @@
 <?php
 
-    use libmysqldriver\MySQL as MySQLDriver;
+    namespace Reflect\Database;
+
+    use const \Reflect\ENV;
+    use \Reflect\Path;
+    use \Reflect\Request\Connection;
+    use \Reflect\Request\Method;
+
+    use \libmysqldriver\MySQL as MySQLDriver;
 
     class AuthDB extends MySQLDriver {
         // This is the default fallback key used when no key is provided
@@ -13,10 +20,10 @@
 
         public function __construct(private Connection $con) {
             parent::__construct(
-                $_ENV["mysql_host"],
-                $_ENV["mysql_user"],
-                $_ENV["mysql_pass"],
-                $_ENV["mysql_db"]
+                $_ENV[ENV]["mysql_host"],
+                $_ENV[ENV]["mysql_user"],
+                $_ENV[ENV]["mysql_pass"],
+                $_ENV[ENV]["mysql_db"]
             );
         }
 
@@ -68,7 +75,7 @@
         }
 
         // Check if API key is authorized to call endpoint using method
-        public function check(string $endpoint, string $method): bool {
+        public function check(string $endpoint, Method $method): bool {
             // Ensure endpoint is enabled
             if (!$this->endpoint_active($endpoint)) {
                 return false;
@@ -87,7 +94,7 @@
             $res = $this->return_bool($sql, [
                 $key,
                 $endpoint,
-                $method
+                $method->value
             ]);
 
             // API key does not have access. So let's check if the endpoint is public
@@ -95,7 +102,7 @@
                 $res = $this->return_bool($sql, [
                     AuthDB::$key_default,
                     $endpoint,
-                    $method
+                    $method->value
                 ]);
             }
 

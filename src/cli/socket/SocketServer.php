@@ -1,5 +1,12 @@
 <?php
 
+    namespace Reflect\Socket;
+
+    use const \Reflect\ENV;
+    use \Reflect\Path;
+    use \Reflect\Request\Router;
+    use \Reflect\Request\Connection;
+
     require_once Path::reflect("src/request/Router.php");
 
     // Handle RESTful requests over AF_UNIX socket.
@@ -61,7 +68,7 @@
                 $client = socket_accept($this->socket);
 
                 // Bind handler for outgoing data
-                $_ENV["SOCKET_STDOUT"] = function (string $msg, int $code = 200) use (&$client) {
+                $_ENV[ENV]["SOCKET_STDOUT"] = function (string $msg, int $code = 200) use (&$client) {
                     $tx = json_encode([$code, $msg]);
                     socket_write($client, $tx, strlen($tx));
                 };

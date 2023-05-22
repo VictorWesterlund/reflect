@@ -1,5 +1,7 @@
 <?php
 
+    namespace Reflect\CLI;
+
     if (php_sapi_name() !== "cli") {
         die("Must be run from command line");
     }

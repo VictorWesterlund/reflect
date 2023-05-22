@@ -1,5 +1,10 @@
 <?php
 
+    namespace Reflect\CLI;
+
+    use \Reflect\CLI\CLI;
+    use \Reflect\Socket\SocketServer;
+
     require_once Path::reflect("src/cli/CLI.php");
     require_once Path::reflect("src/cli/socket/SocketServer.php");
 

@@ -1,9 +1,16 @@
 <?php
 
+    namespace Reflect;
+
+    use \Reflect\Request\Connection;
+    use \Reflect\Request\Router;
+    use \Reflect\Database\Idempotency;
+
     require_once Path::reflect("src/request/Router.php");
     require_once Path::reflect("src/database/Idemp.php");
     require_once Path::reflect("src/api/helpers/RuleMatcher.php");
     require_once Path::reflect("src/api/helpers/GlobalSnapshot.php");
+    require_once Path::reflect("src/api/classes/Stdout.php");
 
     // Allowed response Content-Types
     enum ContentType {
@@ -11,20 +18,15 @@
         case Text;
     }
 
-    // Allowed HTTP verbs
-    enum Method: string {
-        case GET     = "GET";
-        case POST    = "POST";
-        case PUT     = "PUT";
-        case DELETE  = "DELETE";
-        case PATCH   = "PATCH";
-        case OPTIONS = "OPTIONS";
+    // Endpoint class template
+    interface Endpoint {
+        public function main();
     }
 
     // This class is inherited by all API endpoints and contains some standard bootstrapping functionality.
     class API {
         // An endpoint must specify a valid Content-Type to use the standard outputs of this class.
-        public function __construct(private ContentType $type) {
+        public function __construct() {
             $this->con = null;
             $this->type = $type;
         }
@@ -55,7 +57,7 @@
             // Validate and spend idempotency key if enabled for environment and if the connection isn't INTERNAL.
             // INTERNAL connections don't need additional idempotency validation as the upstream connection already has
             // idempotency validation applied.
-            if (!empty($_ENV["idempotency"]) && $this->con !== Connection::INTERNAL) {
+            if (!empty($_ENV[ENV]["idempotency"]) && $this->con !== Connection::INTERNAL) {
                 $idemp = $this->idempotent_ok();
 
                 if (!$idemp) {
@@ -108,13 +110,13 @@
             }
 
             // Connection is through internal router
-            if (isset($_ENV["INTERNAL_STDOUT"])) {
+            if (isset($_ENV[ENV]["INTERNAL_STDOUT"])) {
                 return $output;
             }
 
             // Connection is through socket
-            if (isset($_ENV["SOCKET_STDOUT"])) {
-                return $_ENV["SOCKET_STDOUT"]($output, $code);
+            if (isset($_ENV[ENV]["SOCKET_STDOUT"])) {
+                return $_ENV[ENV]["SOCKET_STDOUT"]($output, $code);
             }
 
             // Connection is through HTTP
@@ -166,7 +168,7 @@
             }
 
             // Set flag to let stdout() know that we wish to return instead of exit.
-            $_ENV["INTERNAL_STDOUT"] = true;
+            $_ENV[ENV]["INTERNAL_STDOUT"] = true;
 
             // Start "proxied" Router. Connection type INTERNAL will make its API->stdout() and API->stderr() return instead of exit.
             $resp = (new Router(Connection::INTERNAL))->main();
