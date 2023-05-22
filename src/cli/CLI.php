@@ -2,6 +2,11 @@
 
     namespace Reflect\CLI;
 
+    use \Reflect\Path;
+    use \Reflect\Response;
+
+    require_once Path::reflect("src/api/builtin/Response.php");
+
     if (php_sapi_name() !== "cli") {
         die("Must be run from command line");
     }
@@ -28,6 +33,16 @@
         }
 
         public function echo(mixed $msg) {
+            // Get message from
+            if ($msg instanceof Response) {
+                // Response is not OK. Show as error message
+                if (!$msg->ok) {
+                    return $this->error($msg->output());
+                }
+
+                $msg = $msg->output();
+            }
+
             if (!is_string($msg)) {
                 $msg = json_encode($msg);
             }

@@ -81,7 +81,7 @@
                 return false;
             }
 
-            // Internal connections are always allowed
+            // Internal and local connections are always allowed
             if (in_array($this->con, [Connection::INTERNAL, Connection::AF_UNIX])) {
                 return true;
             }

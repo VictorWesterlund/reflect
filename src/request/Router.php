@@ -127,9 +127,11 @@
                 return new Response($this->get_options($this->endpoint), 200);
             }
 
+            $test = file_exists($file);
+
             // Check that the endpoint exists and that the user is allowed to call it
             if (!file_exists($file) || !$this->check($this->endpoint, $this->method)) {
-                return new Response(["No endpoint", "Endpoint not found or insufficient permissions for the requested method."], 404);
+                return new Response(["No endpoint", "Endpoint not found or insufficient permissions for the requested method"], 404);
             }
 
             // Import endpoint code from file
@@ -140,7 +142,7 @@
             if (!class_exists($class)) {
                 // Return 503 if the class name of the requested endpoint does not match the path.
                 // Eg. endpoint '/foo/bar' should have a class with the name 'FooBar' inside a <METHOD>.php file
-                return new Response(["Service unavailable", "Endpoint is not configured yet."], 503);
+                return new Response(["Service unavailable", "Broken class anchor"], 503);
             }
 
             // Parse JSON payload from client into superglobal.

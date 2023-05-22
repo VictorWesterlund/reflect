@@ -14,13 +14,15 @@
             $this->output = $output;
             $this->type = $type;
             $this->code = $code;
+            
+            // Similar to JavaScript's "Response.ok" for easy check if response is, well, OK.
+            $this->ok = $code < 300 && $code >= 200;
 
             // Set Content-Type of response with MIME type from enum
             header("Content-Type: {$type->value}");
 
-            if (isset($_ENV[ENV]["INTERNAL_STDOUT"])) {
-                $this->stdout_internal();
-            } else {
+            // Response is not an internal request (from Call()) so we need to trigger an output from here
+            if (!isset($_ENV[ENV]["INTERNAL_STDOUT"])) {
                 if (isset($_ENV[ENV]["SOCKET_STDOUT"])) {
                     $this->stdout_socket();
                 } else {
@@ -44,7 +46,13 @@
             };
         }
 
+        // Pass output to socker handler
         private function stdout_socket() {
             return $_ENV[ENV]["SOCKET_STDOUT"]($this->output, $this->code);
+        }
+
+        // Get output for use with internal requests
+        public function output(): mixed {
+            return $this->output;
         }
     }

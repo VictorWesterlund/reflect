@@ -270,9 +270,24 @@
         private function acl() {
             switch ($this->args[1]) {
                 case "list":
-                    // Get all ACL records
-                    $endpoints = Call("reflect/acl", Method::GET);
-                    return $this->list($endpoints);
+                    // Get all userspace ACL records
+                    $acl = Call("reflect/acl", Method::GET);
+
+                    if (!$acl->ok) {
+                        return $this->error("Failed to list ACL", $acl->output());
+                    }
+
+                    $output = [];
+                    foreach ($acl->output() as $record) {
+                        // Exclude reflect ACL records (required for system endpoints)
+                        if (strpos($record["id"], "INTERNAL_") === 0) {
+                            continue;
+                        }
+
+                        $output[] = $record;
+                    }
+
+                    return !empty($output) ? $this->list($output) : $this->error("No ACL records defined");
 
                 case "grant":
                 case "deny":
