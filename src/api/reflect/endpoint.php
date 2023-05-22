@@ -21,22 +21,6 @@
             $this->db = new AuthDB(Connection::INTERNAL);
         }
 
-        private static function uc_first_endpoint(string $endpoint): string|bool {
-            // Split endpoint string into crumbs
-            $crumbs = explode("/", $endpoint);
-            // Endpoint must contain at least one slash
-            if (count($crumbs) < 2) {
-                return false;
-            }
-
-            // Capitalize first char of endpoint
-            $key = array_key_last($crumbs);
-            $crumbs[$key] = ucfirst($crumbs[$key]);
-
-            // Reconstruct string
-            return implode("/", $crumbs);
-        }
-
         // Get endpoints
         public function _GET() {
             // Check if endpoint exists by name
@@ -57,7 +41,6 @@
             $update = [];
 
             if (!empty($_POST["endpoint"])) {
-                $_POST["endpoint"] = $this::uc_first_endpoint($_POST["endpoint"]);
                 if (empty($_POST["endpoint"])) {
                     return $this->stderr("Invalid endpoint", 400, "Endpoint name must contain scope and endpoint separated by a slash");
                 }
@@ -93,15 +76,14 @@
 
         // Add new endpoint
         public function _POST() {
-            $endpoint = $this::uc_first_endpoint($_POST["endpoint"]);
-            if (empty($endpoint)) {
+            if (empty($_POST["endpoint"])) {
                 return $this->stderr("Invalid endpoint", 400, "Endpoint name must contain scope and endpoint separated by a slash");
             }
 
             // Attempt to add endpoint
             $sql = "INSERT INTO api_endpoints (endpoint, active) VALUES (?, ?)";
             $res = $this->db->return_bool($sql, [
-                $endpoint,
+                $_POST["endpoint"],
                 1
             ]);
 

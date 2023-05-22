@@ -35,12 +35,17 @@
             echo $msg . "\n";
         }
 
-        public function error(mixed $msg) {
+        public function error(mixed $msg, string $expected = null) {
             if (!is_string($msg)) {
                 $msg = json_encode($msg);
             }
 
-            return $this->echo("ERROR: " . $msg);
+            $this->echo("\e[41mERROR: ${msg}\e[0m");
+
+            // Error has an expected format it wants to show
+            if (!empty($expected)) {
+                $this->echo("\e[91mExpected:\e[0m " . $expected);
+            }
         }
 
         public function list(array $items) {

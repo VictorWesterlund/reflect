@@ -50,7 +50,7 @@
                 // Flatten array
                 $res = $res[0];
                 // Resolve user foregin key
-                $res["user"] = $this->call("reflect/User?id={$res["user"]}")[0]["id"];
+                $res["user"] = $this->call("reflect/user?id={$res["user"]}")[0]["id"];
 
                 return $this->stdout($res);
             }
@@ -111,7 +111,7 @@
         // Create new API key for user
         public function _POST() {
             // Check that the user exists and is active
-            $user = $this->call("reflect/User?id={$_POST["user"]}", Method::GET);
+            $user = $this->call("reflect/user?id={$_POST["user"]}", Method::GET);
             if (!empty($user[0]["errorCode"])) {
                 return $this->stderr("Failed to add key", 500, $user);
             }
@@ -147,7 +147,7 @@
             }
 
             // Check that the key exists and is active
-            $key = $this->call("reflect/Key?id={$_GET["id"]}", Method::GET);
+            $key = $this->call("reflect/key?id={$_GET["id"]}", Method::GET);
             if (!empty($user[0]["errorCode"])) {
                 return $this->stderr("Failed to add key", 500, $key);
             }
