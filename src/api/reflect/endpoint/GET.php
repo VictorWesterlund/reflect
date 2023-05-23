@@ -9,25 +9,30 @@
     require_once Path::reflect("src/request/Router.php");
     require_once Path::reflect("src/database/Auth.php");
 
-    class GET_ReflectAcl extends AuthDB implements Endpoint {
+    class GET_ReflectEndpoint extends AuthDB implements Endpoint {
+        const GET = [
+            "id" => [
+                "required" => false,
+                "min"      => 1,
+                "max"      => 128
+            ]
+        ];
+        
         public function __construct() {
             parent::__construct(Connection::INTERNAL);
         }
 
         public function main(): Response {
-            // Return ACL details by id
+            // Check if endpoint exists by name
             if (!empty($_GET["id"])) {
-                $sql = "SELECT id, api_key, endpoint, method, created FROM api_acl WHERE id = ?";
+                $sql = "SELECT endpoint, active FROM api_endpoints WHERE endpoint = ?";
                 $res = $this->return_array($sql, $_GET["id"]);
 
-                return !empty($res) 
-                    ? new Response($res)
-                    : new Response(["No record", "No ACL record found with id '{$_GET["id"]}'"], 404);
+                return !empty($res) ? new Response($res) : new Response(["No endpoint", "No endpoint found with name '{$_GET["id"]}'"], 404);
             }
 
             // Return array of all active Reflect API users
-            $sql = "SELECT id, created FROM api_acl";
-
+            $sql = "SELECT endpoint, active FROM api_endpoints";
             return new Response($this->return_array($sql));
         }
     }

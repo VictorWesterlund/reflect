@@ -1,6 +1,8 @@
 <?php
 
-    class Rules {
+    namespace Reflect\Helpers;
+
+    class RuleMatcher {
         // String or number can not be shorter/smaller than constraint
         public static function rule_min(string|int|null $value, int $cstr): string|bool {
             if (is_string($value)) {
@@ -63,9 +65,8 @@
         }
     }
 
-    class RuleMatcher extends Rules {
+    class Rules extends RuleMatcher {
         public function __construct(array &$fields) {
-            //parent::__construct();
             $this->fields = $fields;
         }
 
@@ -102,7 +103,7 @@
                 }
 
                 // Ignore rules for optional field that has not been set
-                if (!isset($this->fields[$field]) && $rules["required"] === false) {
+                if (empty($this->fields[$field]) && $rules["required"] === false) {
                     continue;
                 }
 

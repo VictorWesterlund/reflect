@@ -44,7 +44,12 @@
                 case "list":
                     // Get list of endpoints
                     $endpoints = Call("reflect/endpoint", Method::GET);
-                    $endpoints = array_column($endpoints, "endpoint");
+
+                    if (!$endpoints->ok) {
+                        return $this->error($endpoints);
+                    }
+
+                    $endpoints = array_column($endpoints->output(), "endpoint");
 
                     // Format list of endpoints
                     $endpoints = array_map(function($endpoint): string {
@@ -79,29 +84,18 @@
                     }
 
                     // Check that the endpoint does not already exist.
-                    $check = Call("reflect/endpoint?id=${endpoint}", Method::GET);
-
-                    // We expect a 404 response from the endpoint since we're attemting to
-                    // create it. Any other errorCode should be treated as an error.
-                    if (in_array("errorCode", array_keys($check)) && $check["errorCode"] !== 404) {
-                        return $this->error($check);
-                    };
-
-                    // Endpoint already exists
-                    if (!empty($check[0])) {
-                        // Reactivate endpoint if it already exists
-                        if ($check[0]["active"] === 0) {
-                            return $this->echo(Call("reflect/endpoint?id=${endpoint}", Method::PATCH, [
-                                "active" => true
-                            ]));
-                        }
-
-                        return $this->error("Endpoint already added");
+                    if (Call("reflect/endpoint?id=${endpoint}", Method::GET)->ok) {
+                        return $this->error("Endpoint already exists");
                     }
 
-                    return $this->echo(Call("reflect/endpoint", Method::POST, [
+                    // Attempt to create the endpoint
+                    $create = Call("reflect/endpoint", Method::POST, [
                         "endpoint" => $endpoint
-                    ]));
+                    ]);
+
+                    return $create->ok 
+                        ? $this->echo("OK") 
+                        : $this->error(["Failed to create endpoint", $create]);
 
                 case "remove":
                     // Next argument should be endpoint name
@@ -130,43 +124,37 @@
         private function user() {
             switch ($this->args[1]) {
                 case "list":
-                    return $this->list(Call("reflect/user?id={$this->args[2]}", Method::GET));
+                    $users = Call("reflect/user?id={$this->args[2]}", Method::GET);
+                    return $users->ok 
+                        ? $this->list($users->output()) 
+                        : $this->error(["Failed to get users", $users]);
 
                 case "add":
-                    if (empty($this->args[2])) {
-                        return $this->error("User name can not be empty");
+                    $name = $this->args[2];
+
+                    if (empty($name)) {
+                        return $this->error("Name can not be empty", "reflect user add <name>");
                     }
+
+                    $user = Call("reflect/user?id=${name}", Method::GET);
 
                     // Check that the user does not already exist.
-                    $user = Call("reflect/user?id={$this->args[2]}", Method::GET);
-
-                    // We expect a 404 response from the endpoint since we're attemting to
-                    // create it. Any other errorCode should be treated as an error.
-                    if (!empty($user["errorCode"]) && $user["errorCode"] !== 404) {
-                        return $this->error($user);
-                    };
-
-                    // User already exists
-                    if (!empty($user[0])) {
-                        // Reactivate user if already exists
-                        if ($user[0]["active"] === 0) {
-                            return $this->echo(Call("reflect/user", Method::PUT, [
-                                "id"     => $this->args[2],
-                                "active" => true
-                            ]));
-                        }
-
-                        return $this->echo("User already added");
+                    if ($user->ok) {
+                        return $this->error("User '${name}' already exists");
                     }
 
-                    return $this->echo(Call("reflect/user", Method::POST, [
-                        "id"     => $this->args[2],
-                        "active" => true
-                    ]));
+                    // Attempt to create the endpoint
+                    $create = Call("reflect/user", Method::POST, [
+                        "id" => $name
+                    ]);
+
+                    return $create->ok 
+                        ? $this->echo("OK") 
+                        : $this->error(["Failed to add user", $create]);
 
                 case "remove":
                     if (empty($this->args[2])) {
-                        return $this->error("User name can not be empty");
+                        return $this->error("Name can not be empty", "reflect user remove <name>");
                     }
 
                     // Check that the user does not already exist.
