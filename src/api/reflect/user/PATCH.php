@@ -8,7 +8,7 @@
 
     require_once Path::reflect("src/request/Router.php");
 
-    class PATCH_ReflectEndpoint implements Endpoint {
+    class PATCH_ReflectUser implements Endpoint {
         const GET = [
             "id" => [
                 "required" => true,
@@ -30,6 +30,6 @@
 
         public function main(): Response {
             // Alias for PUT
-            return Call("reflect/endpoint?id={$_GET["id"]}", Method::PUT, $_POST);
+            return Call("reflect/user?id={$_GET["id"]}", Method::PUT, $_POST);
         }
     }

@@ -8,7 +8,7 @@
 
     require_once Path::reflect("src/request/Router.php");
 
-    class DELETE_ReflectEndpoint implements Endpoint {
+    class DELETE_ReflectSessionUser implements Endpoint {
         const GET = [
             "id" => [
                 "required" => true,
@@ -21,13 +21,18 @@
             // ...
         }
 
+        // Attempt to delete current user
         public function main(): Response {
-            // Soft-delete endpoint by setting active to false
-            $delete = Call("reflect/endpoint?id={$_GET["id"]}", Method::PUT, [
-                "active" => false
-            ]);
+            // Get ID from current user
+            $user = Call("reflect/session/user", Method::GET);
+            if (!$user->ok) {
+                return new Response(["Failed to delete user", $user], 500);
+            }
+
+            // Delete current user by ID
+            $delete = Call("reflect/user?id={$user->output()}", Method::DELETE);
             return $delete->ok
                 ? new Response("OK")
-                : new Response(["Failed to delete key", $delete], 500);
+                : new Response(["Failed to delete user", $delete], 500);
         }
     }

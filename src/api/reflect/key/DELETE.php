@@ -8,7 +8,7 @@
 
     require_once Path::reflect("src/request/Router.php");
 
-    class PATCH_ReflectEndpoint implements Endpoint {
+    class DELETE_ReflectKey implements Endpoint {
         const GET = [
             "id" => [
                 "required" => true,
@@ -17,19 +17,17 @@
             ]
         ];
 
-        const POST = [
-            "active"   => [
-                "required" => true,
-                "type"     => "bool"
-            ]
-        ];
-
         public function __construct() {
             // ...
         }
 
         public function main(): Response {
-            // Alias for PUT
-            return Call("reflect/endpoint?id={$_GET["id"]}", Method::PUT, $_POST);
+            // Soft-delete key by setting active to false
+            $delete = Call("reflect/key?id={$_GET["id"]}", Method::PUT, [
+                "active" => false
+            ]);
+            return $delete->ok
+                ? new Response("OK")
+                : new Response(["Failed to delete key", $delete], 500);
         }
     }

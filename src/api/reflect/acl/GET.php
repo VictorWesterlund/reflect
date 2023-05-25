@@ -27,7 +27,6 @@
 
             // Return array of all active Reflect API users
             $sql = "SELECT id, created FROM api_acl";
-
             return new Response($this->return_array($sql));
         }
     }

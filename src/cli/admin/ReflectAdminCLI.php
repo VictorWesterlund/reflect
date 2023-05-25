@@ -161,12 +161,15 @@
                     $user = Call("reflect/user?id={$this->args[2]}", Method::GET);
 
                     // User does not exist
-                    if (!empty($user[0]["errorCode"]) && $user[0]["errorCode"] !== 404) {
-                        return $this->error($user);
-                    };
+                    if (!$user->ok) {
+                        return $this->error("User '{$this->args[2]}' does not exist", 404);
+                    }
 
                     // Delete user by id
-                    return $this->echo(Call("reflect/user?id={$this->args[2]}", Method::DELETE));
+                    $delete = Call("reflect/user?id={$this->args[2]}", Method::DELETE);
+                    return $delete->ok 
+                        ? $this->echo("OK") 
+                        : $this->error(["Failed to delete user", $delete]);
 
                 default:
                     return $this->error("Expected user operation", "reflect user <list/add/remove>");
@@ -176,43 +179,29 @@
         private function key() {
             switch ($this->args[1]) {
                 case "list":
-                    // Get list of users
-                    return $this->list(Call("reflect/key?id={$this->args[2]}", Method::GET));
+                    $keys = Call("reflect/key?id={$this->args[2]}", Method::GET);
+                    return $keys->ok 
+                        ? $this->list($keys->output()) 
+                        : $this->error(["Failed to get keys", $keys]);
 
                 case "add":
                     if (empty($this->args[2])) {
-                        return $this->error("User name can not be empty");
+                        return $this->error("API user can not be empty", "reflect key add <user> [expires] [key]");
                     }
 
                     // User does not exist
                     $user = Call("reflect/user?id={$this->args[2]}", Method::GET);
-                    if (!empty($user[0]["errorCode"])) {
-                        return $this->error($user);
-                    };
-
-                    // Requesting to generate or reactivate a key with specific id
-                    if (!empty($this->args[3])) {
-                        // Check if key key exists
-                        $key = Call("reflect/key?id={$this->args[3]}", Method::GET);
-                        if (empty($key["errorCode"])) {
-                            // Reactivate key if exists
-                            if ($key["active"] === 0) {
-                                return $this->echo(Call("reflect/key?id={$this->args[2]}", Method::PATCH, [
-                                    "active" => true
-                                ]));
-                            }
-                        }
-
-                        // Add named key
-                        return $this->echo(Call("reflect/key", Method::POST, [
-                            "id"   => $this->args[3],
-                            "user" => $this->args[2]
-                        ]));
+                    if (!$user->ok) {
+                        return $this->error("No user with id '{$this->args[2]}' could be fond");
                     }
 
-                    // Generate a new key for user
+                    // Create or generate API key
                     return $this->echo(Call("reflect/key", Method::POST, [
                         "user" => $this->args[2],
+                        // Set expiry date (Unix epoch) if provided
+                        "expires"   => !empty($this->args[3]) ? (int) $this->args[3] : null,
+                        // Pass user defined API key if provided
+                        "id"   => $this->args[4] ?? null
                     ]));
 
                 case "remove":
@@ -222,12 +211,15 @@
 
                     // Check that the key exists
                     $key = Call("reflect/key?id={$this->args[2]}", Method::GET);
-                    if (!empty($key[0]["errorCode"])) {
-                        return $this->error($key);
+                    if (!$key->ok) {
+                        return $this->error("No API key with id '{$this->args[2]}' was found");
                     };
 
                     // Delete key by id
-                    return $this->echo(Call("reflect/key?id={$this->args[2]}", Method::DELETE));
+                    $delete = Call("reflect/key?id={$this->args[2]}", Method::DELETE);
+                    return $delete->ok 
+                        ? $this->echo("OK") 
+                        : $this->error(["Failed to delete key", $delete]);
 
                 case "set":
                     if (empty($this->args[2])) {
@@ -278,9 +270,22 @@
                     return !empty($output) ? $this->list($output) : $this->error("No ACL records defined");
 
                 case "grant":
+                    if (empty($this->args[2]) || empty($this->args[3]) || empty($this->args[4])) {
+                        return $this->error("Expected ACL options", "reflect acl grant <endpoint> <verb> <key>");
+                    }
+
+                    $grant = Call("reflect/acl?id={$this->args[2]}", Method::POST, [
+                        "key"  => $this->args[4],
+                        "endpoint" => $this->args[2],
+                        "method"   => $this->args[3]
+                    ]);
+                    return $grant->ok
+                        ? $this->echo("OK") 
+                        : $this->error(["Failed to grant ACL rule", $grant]);
+
                 case "deny":
                     if (empty($this->args[2]) || empty($this->args[3]) || empty($this->args[4])) {
-                        return $this->error("Expected ACL options", "reflect acl {$this->args[1]} <endpoint> <verb> <api_key>");
+                        return $this->error("Expected ACL options", "reflect acl deny <endpoint> <verb> <key>");
                     }
 
                     // Id is a SHA256 hash of all ACL fields truncated to 32 chars
@@ -290,16 +295,10 @@
                         strtoupper($this->args[3]) // Method
                     ])), -32);
 
-                    // Request is to remove an existing ACL record
-                    if ($this->args[1] === "deny") {
-                        return $this->echo(Call("reflect/acl?id=${hash}", Method::DELETE));
-                    }
-
-                    return $this->echo(Call("reflect/acl", Method::POST, [
-                        "api_key"  => $this->args[4],
-                        "endpoint" => $this->args[2],
-                        "method"   => $this->args[3]
-                    ]));
+                    $delete = Call("reflect/acl?id=${hash}", Method::DELETE);
+                    return $delete->ok
+                        ? $this->echo("OK") 
+                        : $this->error(["Failed to remove ACL rule", $delete]);
 
                 default:
                     return $this->error("Expected ACL operation", "reflect acl <list/grant/deny>");
