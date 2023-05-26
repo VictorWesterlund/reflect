@@ -5,9 +5,9 @@
 
 <p align="center">Reflect is a powerful API framework written in- and for PHP that aims to simplify the development of robust and secure APIs. This framework handles essential components such as authentication, routing, and request validation, allowing developers to focus on building their API endpoints quickly and efficiently.</p>
 
-<a href="https://github.com/VictorWesterlund/reflect/wiki"><p align="center">
-   <img src="https://github.com/VictorWesterlund/reflect/assets/35688133/8c506170-3e13-405e-8bb0-62416769a15b">
-</p></a>
+<p align="center">
+   <a href="https://github.com/VictorWesterlund/reflect/wiki"><img src="https://github.com/VictorWesterlund/reflect/assets/35688133/8c506170-3e13-405e-8bb0-62416769a15b"></a>
+</p>
 
 <h2 align="center">Key Features</h2>
 
