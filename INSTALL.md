@@ -45,8 +45,8 @@ Assuming you have all that set up, here's how to get Reflect up and running:
 5. **HTTP and/or Socket**
 
    The following guides will explain how to accept requests from either HTTP or UNIX sockets.
-   - [HTTP](#http)
-   - [UNIX Socket](#unix-socket)
+   - [HTTP](#-http)
+   - [UNIX Socket](#-unix-socket)
    
 # Listen on...
    
