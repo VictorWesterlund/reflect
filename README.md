@@ -1,10 +1,20 @@
 <p align="center">
    <img src="https://github.com/VictorWesterlund/reflect/assets/35688133/274464b2-04b4-430f-bf4e-73d77e023bee">
 </p>
-<h1 align="center">Reflect</h1>
+<h1 align="center">Reflect API Framework</h1>
 
-<p align="center">Reflect is a framework for building REST APIs over HTTP and UNIX sockets in PHP. 
-It handles authentication and request routing so you can put more attention towards building great endpoints.</p>
+<p align="center">Reflect is a powerful API framework written in- and for PHP that aims to simplify the development of robust and secure APIs. This framework handles essential components such as authentication, routing, and request validation, allowing developers to focus on building their API endpoints quickly and efficiently.</p>
+
+<h2 align="center">Key Features</h2>
+
+- **Authentication Handling**: Reflect provides built-in support for HTTP Bearer token authentication.
+- **Request Validation**: Reflect provides powerful request validation capabilities, ensuring that incoming requests meet your specified criteria. You can define validation rules for request parameters, headers, and body, enhancing the security and reliability of your API.
+- **Support for HTTP and UNIX Sockets**: Reflect supports both traditional HTTP requests as well as UNIX sockets, providing flexibility in how you accept and handle incoming requests. This allows you to integrate your API with various systems and technologies.
+- **One-to-One File Structure**: The framework follows a one-to-one file structure, where each endpoint has its own folder. This design pattern promotes code organization and makes it easy to locate and maintain specific API functionality.
+- **Separate Files for Request Methods**: Reflect encourages storing code for different HTTP methods (GET, POST, PUT, PATCH, DELETE) in separate files. This promotes modularity and allows for easier maintenance and testing.
+- **CLI Tool for Efficient Management**: Reflect includes a powerful Command-Line Interface (CLI) tool that streamlines the management of your API. The CLI tool allows you to easily create, update, and manage endpoints, users, API keys, and access rules. With intuitive commands and options, you can quickly configure and customize your API, saving you valuable development time and effort. Whether you need to add new endpoints, create user accounts, generate API keys, or define access permissions, the CLI tool provides a convenient and efficient way to handle these administrative tasks.
+
+*Please note that the CLI tool is an optional component of Reflect, providing a convenient way to manage various aspects of your API. You can choose to use it according to your specific needs and preferences.*
 
 ---
 
