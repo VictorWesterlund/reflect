@@ -2,6 +2,7 @@
 
     namespace Reflect\CLI;
 
+    use \Reflect\Path;
     use \Reflect\CLI\CLI;
     use \Reflect\Socket\SocketServer;
 
@@ -29,14 +30,17 @@
                 return $this->error("Expected path as next argument");
             }
 
-            $this->echo("Reflect listening at '{$this->args[1]}' (Ctrl+C to stop)");
+            $this->echo("Starting server...");
 
             // Try to initialize the socket server
             try {
                 $this->server = new SocketServer($this->args[1]);
+
+                $this->echo("Listening at '\e[1m\e[95m{$this->args[1]}\e[0m' \e[37m(Ctrl+C to stop)\e[0m");
+
                 $this->server->listen();
-            } catch (Error $error) {
-                $this->error("Failed to initialize socket server");
+            } catch (\Error $error) {
+                $this->error("Socket: {$error::getMessage()}");
                 return;
             }
         }

@@ -28,7 +28,9 @@
                 $sql = "SELECT endpoint, active FROM api_endpoints WHERE endpoint = ?";
                 $res = $this->return_array($sql, $_GET["id"]);
 
-                return !empty($res) ? new Response($res) : new Response(["No endpoint", "No endpoint found with name '{$_GET["id"]}'"], 404);
+                return !empty($res) 
+                    ? new Response($res[0])
+                    : new Response(["No endpoint", "No endpoint found with name '{$_GET["id"]}'"], 404);
             }
 
             // Return array of all active Reflect API users

@@ -106,10 +106,8 @@
                         return $this->error("Expected endpoint name", "reflect endpoint remove <endpoint>");
                     }
 
-                    $check = Call("reflect/endpoint?id=${endpoint}", Method::GET);
-
-                    // Endpoint does not exist
-                    if (!empty($check["errorCode"])) {
+                    // Endpoint doesn't exist
+                    if (!Call("reflect/endpoint?id=${endpoint}", Method::GET)->ok) {
                         return $this->error($check);
                     };
 
@@ -139,8 +137,18 @@
                     $user = Call("reflect/user?id=${name}", Method::GET);
 
                     // Check that the user does not already exist.
-                    if ($user->ok) {
+                    if ($user->ok && $user->output()["active"]) {
                         return $this->error("User '${name}' already exists");
+                    }
+
+                    // Reactivate previously deactivated user
+                    if ($user->output()["active"] !== 1) {
+                        $reactivate = Call("reflect/user?id={$this->args[2]}", Method::PUT, [
+                            "active" => true
+                        ]);
+                        return $reactivate->ok 
+                            ? $this->echo("OK") 
+                            : $this->error(["Failed to reactivate user", $reactivate]);
                     }
 
                     // Attempt to create the endpoint

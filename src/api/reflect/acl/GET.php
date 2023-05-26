@@ -21,7 +21,7 @@
                 $res = $this->return_array($sql, $_GET["id"]);
 
                 return !empty($res) 
-                    ? new Response($res)
+                    ? new Response($res[0])
                     : new Response(["No record", "No ACL record found with id '{$_GET["id"]}'"], 404);
             }
 

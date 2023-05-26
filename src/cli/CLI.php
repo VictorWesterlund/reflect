@@ -11,6 +11,8 @@
         die("Must be run from command line");
     }
 
+    error_reporting(E_ALL ^ E_WARNING); 
+
     class CLI {
         public function __construct(array $args, int $arglen) {
             // Get all CLI args except name of script file

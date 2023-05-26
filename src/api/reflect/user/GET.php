@@ -29,7 +29,7 @@
 
                 $res = $this->return_array($sql, $_GET["id"]);
                 return !empty($res) 
-                    ? new Response($res) 
+                    ? new Response($res[0]) 
                     : new Response(["No user", "No user with id '{$_GET["id"]}' was found"], 404);
             }
 

@@ -14,7 +14,7 @@
         public function __construct(string $path) {
             // Can not access socket file
             if (!is_writable(dirname($path))) {
-                throw new Error("No permission: Cannot create socket file at '{$path}'");
+                throw new \Error("No permission: Cannot create socket file at '{$path}'");
             }
 
             // Delete existing socket file
@@ -68,7 +68,7 @@
                 $client = socket_accept($this->socket);
 
                 // Bind handler for outgoing data
-                $_ENV[ENV]["SOCKET_STDOUT"] = function (string $msg, int $code = 200) use (&$client) {
+                $_ENV[ENV]["SOCKET_STDOUT"] = function (mixed $msg, int $code = 200) use (&$client) {
                     $tx = json_encode([$code, $msg]);
                     socket_write($client, $tx, strlen($tx));
                 };
