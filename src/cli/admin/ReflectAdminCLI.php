@@ -268,7 +268,7 @@
                     $output = [];
                     foreach ($acl->output() as $record) {
                         // Exclude reflect ACL records (required for system endpoints)
-                        if (strpos($record["id"], "INTERNAL_") === 0) {
+                        if (strpos($record["id"], "INTERNAL_") === 0 || strpos($record["id"], "HTTP_ANYONE_REFL") === 0) {
                             continue;
                         }
 
@@ -283,9 +283,9 @@
                     }
 
                     $grant = Call("reflect/acl?id={$this->args[2]}", Method::POST, [
-                        "key"  => $this->args[4],
                         "endpoint" => $this->args[2],
-                        "method"   => $this->args[3]
+                        "method"   => $this->args[3],
+                        "key"  => $this->args[4]
                     ]);
                     return $grant->ok
                         ? $this->echo("OK") 

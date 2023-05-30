@@ -4,6 +4,7 @@
 
     use \Reflect\Path;
     use \Reflect\CLI\CLI;
+    use const \Reflect\ENV;
     use \Reflect\Socket\SocketServer;
 
     require_once Path::reflect("src/cli/CLI.php");
@@ -26,21 +27,21 @@
         }
 
         private function listen() {
-            if (empty($this->args[1])) {
-                return $this->error("Expected path as next argument");
+            if (empty($_ENV[ENV]["socket"])) {
+                return $this->error("No socket path", "'socket' variable in '.env.ini' must be set to an absolute path on disk");
             }
 
             $this->echo("Starting server...");
 
             // Try to initialize the socket server
             try {
-                $this->server = new SocketServer($this->args[1]);
+                $this->server = new SocketServer($_ENV[ENV]["socket"]);
 
-                $this->echo("Listening at '\e[1m\e[95m{$this->args[1]}\e[0m' \e[37m(Ctrl+C to stop)\e[0m");
+                $this->echo("Listening at '\e[1m\e[95m{$_ENV[ENV]["socket"]}\e[0m' \e[37m(Ctrl+C to stop)\e[0m");
 
                 $this->server->listen();
             } catch (\Error $error) {
-                $this->error("Socket: {$error::getMessage()}");
+                $this->error("Socket: {$error->getMessage()}");
                 return;
             }
         }

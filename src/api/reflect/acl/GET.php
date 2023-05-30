@@ -17,7 +17,7 @@
         public function main(): Response {
             // Return ACL details by id
             if (!empty($_GET["id"])) {
-                $sql = "SELECT id, api_key, endpoint, method, created FROM api_acl WHERE id = ?";
+                $sql = "SELECT api_key, endpoint, method, created FROM api_acl WHERE id = ?";
                 $res = $this->return_array($sql, $_GET["id"]);
 
                 return !empty($res) 
@@ -26,7 +26,7 @@
             }
 
             // Return array of all active Reflect API users
-            $sql = "SELECT id, created FROM api_acl";
+            $sql = "SELECT api_key, endpoint, method, created FROM api_acl ORDER BY created DESC";
             return new Response($this->return_array($sql));
         }
     }
