@@ -7,14 +7,13 @@
     use \Reflect\Response;
     use \Reflect\Database\AuthDB;
     use \Reflect\Database\IdempDB;
-    use \Reflect\Helpers\Rules;
 
     require_once Path::reflect("src/database/Auth.php");
     require_once Path::reflect("src/database/Idemp.php");
-    require_once Path::reflect("src/api/helpers/Rules.php");
 
     // These builtins should be exposed to endpoints in userspace
     require_once Path::reflect("src/api/builtin/Response.php");
+    require_once Path::reflect("src/api/builtin/Rules.php");
     require_once Path::reflect("src/api/builtin/Call.php");
 
     // Client/server connection medium
@@ -95,24 +94,6 @@
                 : Path::reflect("src/api/{$this->endpoint}/{$this->method->value}.php");
         }
 
-        private function validate_request(string $class): array {
-            $errors = [];
-
-            // Enforce GET parameter rules if defined
-            if (defined("${class}::GET")) {
-                $rules = (new Rules($_GET))->match_rules($class::GET);
-                empty($rules) ?: $errors["GET"] = $rules;
-            }
-
-            // Enforce POST parameter rules if defined
-            if (defined("${class}::POST")) {
-                $rules = (new Rules($_POST))->match_rules($class::POST);
-                empty($rules) ?: $errors["POST"] = $rules;
-            }
-
-            return $errors;
-        }
-
         // Call an API endpoint by parsing a RESTful request, checking key permissions against AuthDB,
         // and initializing the endpoint handler class. This is the default request flow.
         public function main(): Response {
@@ -146,15 +127,10 @@
                 $this->load_json_payload();
             }
 
-            $failed_rules = $this->validate_request($class);
-            if (!empty($failed_rules)) {
-                return new Response([
-                    "Missing parameters" => "The following parameters did not meet their requirements",
-                    "Errors"             => $failed_rules
-                ], 422);
-            }
+            // Create instance of endpoint class
+            $endpoint = new $class();
 
             // Run main() method from endpoint class or return No Content respone if the endpoint didn't return
-            return (new $class())->main() ?? new Response("", 204);
+            return $endpoint->main() ?? new Response("", 204);
         }
     }

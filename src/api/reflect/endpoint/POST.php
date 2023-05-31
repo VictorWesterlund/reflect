@@ -1,31 +1,32 @@
 <?php
 
     use \Reflect\Path;
-    use function \Reflect\Call;
+    use \Reflect\Rules;
     use \Reflect\Endpoint;
     use \Reflect\Response;
-    use \Reflect\Request\Connection;
+    use function \Reflect\Call;
     use \Reflect\Request\Method;
     use \Reflect\Database\AuthDB;
+    use \Reflect\Request\Connection;
 
     require_once Path::reflect("src/request/Router.php");
     require_once Path::reflect("src/database/Auth.php");
 
     class POST_ReflectEndpoint extends AuthDB implements Endpoint {
-        const POST = [
-            "endpoint" => [
-                "required" => true,
-                "type"     => "text",
-                "min"      => 1,
-                "max"      => 128
-            ],
-            "active"   => [
-                "required" => false,
-                "type"     => "bool"
-            ]
-        ];
-
         public function __construct() {
+            Rules::POST([
+                "endpoint" => [
+                    "required" => true,
+                    "type"     => "text",
+                    "min"      => 1,
+                    "max"      => 128
+                ],
+                "active"   => [
+                    "required" => false,
+                    "type"     => "bool"
+                ]
+            ]);
+            
             parent::__construct(Connection::INTERNAL);
         }
 

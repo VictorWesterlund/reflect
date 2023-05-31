@@ -1,35 +1,36 @@
 <?php
 
     use \Reflect\Path;
+    use \Reflect\Rules;
     use \Reflect\Endpoint;
     use \Reflect\Response;
     use function \Reflect\Call;
     use \Reflect\Request\Method;
-    use \Reflect\Request\Connection;
     use \Reflect\Database\AuthDB;
+    use \Reflect\Request\Connection;
 
     require_once Path::reflect("src/request/Router.php");
     require_once Path::reflect("src/database/Auth.php");
 
     class POST_ReflectKey extends AuthDB implements Endpoint {
-        const POST = [
-            "id"      => [
-                "required" => false,
-                "type"     => "text",
-                "min"      => 32,
-                "max"      => 32
-            ],
-            "user"    => [
-                "required" => true
-            ],
-            "expires" => [
-                "required" => false,
-                "type"     => "int",
-                "max"      => PHP_INT_MAX
-            ]
-        ];
-
         public function __construct() {
+            Rules::POST([
+                "id"      => [
+                    "required" => false,
+                    "type"     => "text",
+                    "min"      => 32,
+                    "max"      => 32
+                ],
+                "user"    => [
+                    "required" => true
+                ],
+                "expires" => [
+                    "required" => false,
+                    "type"     => "int",
+                    "max"      => PHP_INT_MAX
+                ]
+            ]);
+            
             parent::__construct(Connection::INTERNAL);
         }
 

@@ -1,11 +1,12 @@
 <?php
 
     use \Reflect\Path;
+    use \Reflect\Rules;
     use \Reflect\Endpoint;
     use \Reflect\Response;
-    use \Reflect\Request\Connection;
     use \Reflect\Request\Method;
     use \Reflect\Database\AuthDB;
+    use \Reflect\Request\Connection;
 
     require_once Path::reflect("src/request/Router.php");
     require_once Path::reflect("src/database/Auth.php");

@@ -1,6 +1,7 @@
 <?php
 
     use \Reflect\Path;
+    use \Reflect\Rules;
     use \Reflect\Endpoint;
     use \Reflect\Response;
     use function \Reflect\Call;
@@ -9,23 +10,21 @@
     require_once Path::reflect("src/request/Router.php");
 
     class PATCH_ReflectEndpoint implements Endpoint {
-        const GET = [
-            "id" => [
-                "required" => true,
-                "min"      => 1,
-                "max"      => 128
-            ]
-        ];
-
-        const POST = [
-            "active"   => [
-                "required" => true,
-                "type"     => "bool"
-            ]
-        ];
-
         public function __construct() {
-            // ...
+            Rules::GET([
+                "id" => [
+                    "required" => true,
+                    "min"      => 1,
+                    "max"      => 128
+                ]
+            ]);
+
+            Rules::POST([
+                "active"   => [
+                    "required" => true,
+                    "type"     => "bool"
+                ]
+            ]);
         }
 
         public function main(): Response {
