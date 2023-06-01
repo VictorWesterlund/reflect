@@ -84,7 +84,7 @@
             return (__CLASS__)::$rule($value, $cstr);
         }
 
-        private static function match_all(array $all_rules, array $target): array {
+        private static function match_all(array $all_rules, array &$target): array {
             // Key/value array of nonconforming fields
             $nc = [];
 
@@ -100,14 +100,10 @@
                     $rules["required"] = false;
                 }
 
-                // Ignore rules for optional field that has not been set
+                // Rule is not required and not present in $target
                 if (empty($target[$field]) && $rules["required"] === false) {
-                    continue;
-                }
-
-                // Fields that have not been provided in a PATCH request
-                // should be ignored. That means "required" becomes optional.
-                if ($_SERVER["REQUEST_METHOD"] === "PATCH" && !in_array($field, array_keys($_POST))) {
+                    // Set to null so endpoints don't have to check for key existance
+                    $target[$field] = null;
                     continue;
                 }
 
