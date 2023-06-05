@@ -25,10 +25,15 @@
             // Create and bind socket file
             $this->socket = socket_create(AF_UNIX, SOCK_STREAM, 0);
             socket_bind($this->socket, $path);
+
+            // Set socket file permissions
+            chmod($path, $_ENV[ENV]["socket_mode"]);
+
+            $this->client = null;
         }
 
         // Convert message from client into simple PHP-styled presentation of HTTP request
-        private function parse(string $payload) {
+        private function rx(string $payload) {
             // Expecting ["<endpoint>","<method>","<payload>"]
             [$uri, $_SERVER["REQUEST_METHOD"], $data] = json_decode($payload);
 
@@ -49,6 +54,10 @@
             
             // Initialize request router
             (new Router(Connection::AF_UNIX))->main();
+        }
+
+        private function txn() {
+            $this->client = socket_accept($this->socket);
         }
 
         // Stop server
@@ -74,7 +83,7 @@
                 };
 
                 // Parse incoming data
-                $this->parse(socket_read($client, 2024));
+                $this->rx(socket_read($client, 2024));
             }
 
             socket_close($client);

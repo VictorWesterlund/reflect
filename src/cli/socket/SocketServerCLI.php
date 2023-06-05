@@ -17,7 +17,7 @@
             // Send to handler function
             switch ($this->args[0]) {
                 case "listen":
-                    $this->listen();
+                    $this->start();
                     break;
 
                 default:
@@ -26,7 +26,7 @@
             }
         }
 
-        private function listen() {
+        private function start() {
             if (empty($_ENV[ENV]["socket"])) {
                 return $this->error("No socket path", "'socket' variable in '.env.ini' must be set to an absolute path on disk");
             }
@@ -40,9 +40,19 @@
                 $this->echo("Listening at '\e[1m\e[95m{$_ENV[ENV]["socket"]}\e[0m' \e[37m(Ctrl+C to stop)\e[0m");
 
                 $this->server->listen();
-            } catch (\Error $error) {
-                $this->error("Socket: {$error->getMessage()}");
-                return;
+            } catch (\Exception $error) {
+                $this->error($error->getMessage());
+                $this->restart();
             }
+        }
+
+        public function stop() {
+            $this->echo("Stopping server...");
+            $this->server->stop();
+        }
+
+        public function restart() {
+            $this->stop();
+            $this->start();
         }
     }
