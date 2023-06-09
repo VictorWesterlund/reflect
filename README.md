@@ -48,6 +48,7 @@ class GET_FooBar implements Endpoint {
 // File: /endpoints/foo/bar/PUT.php
 
 use \Reflect\Path;
+use \Reflect\Rules;
 use \Reflect\Endpoint;
 use \Reflect\Response;
 use function \Reflect\Call;
@@ -57,29 +58,28 @@ require_once Path::root("/MyDatabase.php");
 
 class POST_FooBar extends MyDatabase implements Endpoint {
    
-   /*
-      The optional constants GET and POST contain rules that will be enforced on the requester before
-      the `main()` method is called. Read more on the wiki. 
-      https://github.com/victorwesterlund/reflect/wiki/rules
-   */
-   
-   const GET = [
-      "foo" => [
-         "required" => true,
-         "type"     => "string"
-      ]
-   ];
-   
-   const POST = [
-      "example_uuid" => [
-         "required" => true,
-         "type"     => "string",
-         "min"      => 32,
-         "max"      => 32
-      ]
-   ];
-
    public function __construct() {
+      /*
+         The optional Rules class can be used to enforce rules on the request.
+         Rules::GET() for search parameters, and Rules::POST() for request body parameters
+         https://github.com/victorwesterlund/reflect/wiki/rules
+      */
+      Rules::GET([
+         "foo" => [
+            "required" => true,
+            "type"     => "string"
+         ]
+      ]);
+      
+      Rules::POST([
+         "example_uuid" => [
+            "required" => true,
+            "type"     => "string",
+            "min"      => 32,
+            "max"      => 32
+         ]
+      ]);
+      
       parent::__construct("mydatabase");
    }
    
