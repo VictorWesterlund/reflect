@@ -2,7 +2,7 @@
 
     namespace Reflect\Socket;
 
-    use const \Reflect\ENV;
+    use \Reflect\ENV;
     use \Reflect\Path;
     use \Reflect\Request\Router;
     use \Reflect\Request\Connection;
@@ -27,7 +27,7 @@
             socket_bind($this->socket, $path);
 
             // Set socket file permissions
-            chmod($path, $_ENV[ENV]["socket_mode"]);
+            chmod($path, ENV::get("socket_mode"));
 
             $this->client = null;
         }
@@ -77,10 +77,10 @@
                 $client = socket_accept($this->socket);
 
                 // Bind handler for outgoing data
-                $_ENV[ENV]["SOCKET_STDOUT"] = function (mixed $msg, int $code = 200) use (&$client) {
+                ENV::set("SOCKET_STDOUT", function (mixed $msg, int $code = 200) use (&$client) {
                     $tx = json_encode([$code, $msg]);
                     socket_write($client, $tx, strlen($tx));
-                };
+                });
 
                 // Parse incoming data
                 $this->rx(socket_read($client, 2024));

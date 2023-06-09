@@ -2,6 +2,7 @@
 
     namespace Reflect;
 
+    use \Reflect\ENV;
     use \Reflect\Path;
     use \Reflect\Response;
     use \Reflect\Request\Router;
@@ -55,7 +56,7 @@
         }
 
         // Set flag to let stdout() know that we wish to return instead of exit.
-        $_ENV[ENV]["INTERNAL_STDOUT"] = true;
+        ENV::set("INTERNAL_STDOUT", true);
 
         // Start "proxied" Router (internal request)
         $resp = (new Router(Connection::INTERNAL))->main();

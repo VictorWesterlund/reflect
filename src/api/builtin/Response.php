@@ -2,6 +2,8 @@
 
     namespace Reflect;
 
+    use \Reflect\ENV;
+
     // Supported response MIME types
     enum ContentType: string {
         case JSON = "application/json";
@@ -22,8 +24,8 @@
             header("Content-Type: {$type->value}");
 
             // Response is not an internal request (from Call()) so we need to trigger an output from here
-            if (!isset($_ENV[ENV]["INTERNAL_STDOUT"])) {
-                if (isset($_ENV[ENV]["SOCKET_STDOUT"])) {
+            if (!ENV::isset("INTERNAL_STDOUT")) {
+                if (ENV::isset("SOCKET_STDOUT")) {
                     $this->stdout_socket();
                 } else {
                     $this->stdout_http();
@@ -48,7 +50,7 @@
 
         // Pass output to socker handler
         private function stdout_socket() {
-            return $_ENV[ENV]["SOCKET_STDOUT"]($this->output, $this->code);
+            return ENV::get("SOCKET_STDOUT")($this->output, $this->code);
         }
 
         // Get output for use with internal requests

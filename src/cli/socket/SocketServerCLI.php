@@ -27,7 +27,7 @@
         }
 
         private function start() {
-            if (empty($_ENV[ENV]["socket"])) {
+            if (!ENV::isset("socket")) {
                 return $this->error("No socket path", "'socket' variable in '.env.ini' must be set to an absolute path on disk");
             }
 
@@ -35,9 +35,9 @@
 
             // Try to initialize the socket server
             try {
-                $this->server = new SocketServer($_ENV[ENV]["socket"]);
+                $this->server = new SocketServer(ENV::get("socket"));
 
-                $this->echo("Listening at '\e[1m\e[95m{$_ENV[ENV]["socket"]}\e[0m' \e[37m(Ctrl+C to stop)\e[0m");
+                $this->echo("Listening at '\e[1m\e[95m" . ENV::get("socket") . "\e[0m' \e[37m(Ctrl+C to stop)\e[0m");
 
                 $this->server->listen();
             } catch (\Exception $error) {

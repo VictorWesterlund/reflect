@@ -1,5 +1,8 @@
 <?php
 
+    use \Reflect\ENV;
+    use \Reflect\Path;
+
     use \libsqlitedriver\SQLite as SQLiteDriver;
 
     class IdempDb extends SQLiteDriver {

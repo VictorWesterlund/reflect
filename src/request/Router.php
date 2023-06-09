@@ -2,7 +2,6 @@
 
     namespace Reflect\Request;
 
-    use const \Reflect\ENV;
     use \Reflect\Path;
     use \Reflect\Response;
     use \Reflect\Database\AuthDB;
