@@ -15,8 +15,19 @@
     class DELETE_ReflectAcl extends AuthDB implements Endpoint {
         public function __construct() {
             Rules::GET([
-                "id" => [
+                "endpoint" => [
                     "required" => true,
+                    "type"     => "text",
+                    "min"      => 1,
+                    "max"      => 128
+                ],
+                "method"   => [
+                    "required" => true,
+                    "type"     => "text"
+                ],
+                "api_key"      => [
+                    "required" => true,
+                    "type"     => "text",
                     "min"      => 1,
                     "max"      => 128
                 ]
@@ -26,17 +37,24 @@
         }
 
         public function main(): Response {
+            // Build qualified pathname and query from components
+            $url = "reflect/acl?endpoint={$_GET["endpoint"]}&method={$_GET["method"]}&api_key={$_GET["api_key"]}";
+
             // Check if the ACL rule exists
-            if (!Call("reflect/acl?id={$_GET["id"]}", Method::GET)->ok) {
-                return new Response("No ACL rule with id '{$_GET["id"]}' was found", 404);
+            if (!Call($url, Method::GET)->ok) {
+                return new Response("No matching ACL rule was found", 404);
             }
 
             // Attempt to delete rule from database
-            $sql = "DELETE FROM api_acl WHERE id = ?";
-            $this->return_bool($sql, $_GET["id"]);
+            $sql = "DELETE FROM api_acl WHERE endpoint = ? AND method = ? AND api_key = ?";
+            $this->return_bool($sql, [
+                $_GET["endpoint"],
+                $_GET["method"],
+                $_GET["api_key"]
+            ]);
 
             // Run GET requet again to see if the rule has indeed been removed
-            return !Call("reflect/acl?id={$_GET["id"]}", Method::GET)->ok
+            return !Call($url, Method::GET)->ok
                 ? new Response("OK")
                 : new Response("Failed to delete ACL rule", 500);
         }

@@ -3,12 +3,13 @@
     namespace Reflect\CLI;
 
     use \Reflect\Path;
-    use function \Reflect\Call;
     use \Reflect\CLI\CLI;
+    use function \Reflect\Call;
     use \Reflect\Request\Method;
 
     require_once Path::reflect("src/cli/CLI.php");
     require_once Path::reflect("src/request/Router.php");
+    
     require_once Path::reflect("src/api/builtin/Call.php");
 
     class ReflectAdminCLI extends CLI {
@@ -267,17 +268,9 @@
                         return $this->error("Failed to list ACL", $acl->output());
                     }
 
-                    $output = [];
-                    foreach ($acl->output() as $record) {
-                        // Exclude reflect ACL records (required for system endpoints)
-                        if (strpos($record["id"], "INTERNAL_") === 0 || strpos($record["id"], "HTTP_ANYONE_REFL") === 0) {
-                            continue;
-                        }
-
-                        $output[] = $record;
-                    }
-
-                    return !empty($output) ? $this->list($output) : $this->error("No ACL records defined");
+                    return !empty($acl->output()) 
+                        ? $this->list($acl->output()) 
+                        : $this->error("No ACL records defined");
 
                 case "grant":
                     if (empty($this->args[2]) || empty($this->args[3]) || empty($this->args[4])) {
@@ -298,14 +291,7 @@
                         return $this->error("Expected ACL options", "reflect acl deny <endpoint> <verb> <key>");
                     }
 
-                    // Id is a SHA256 hash of all ACL fields truncated to 32 chars
-                    $hash = substr(hash("sha256", implode("", [
-                        $this->args[4], // API key
-                        $this->args[2], // Endpoint
-                        strtoupper($this->args[3]) // Method
-                    ])), -32);
-
-                    $delete = Call("reflect/acl?id=${hash}", Method::DELETE);
+                    $delete = Call("reflect/acl?endpoint={$this->args[2]}&method={$this->args[3]}&api_key={$this->args[4]}", Method::DELETE);
                     return $delete->ok
                         ? $this->echo("OK") 
                         : $this->error(["Failed to remove ACL rule", $delete]);

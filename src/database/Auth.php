@@ -10,7 +10,7 @@
     use \libmysqldriver\MySQL as MySQLDriver;
 
     class AuthDB extends MySQLDriver {
-        private const DEFAULT_PUBLIC_API_KEY = "PUBLIC_API_KEY";
+        public const DEFAULT_PUBLIC_API_KEY = "PUBLIC_API_KEY";
 
         public function __construct(private Connection $con) {
             parent::__construct(
