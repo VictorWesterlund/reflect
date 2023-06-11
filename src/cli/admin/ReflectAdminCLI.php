@@ -280,7 +280,7 @@
                     $grant = Call("reflect/acl?id={$this->args[2]}", Method::POST, [
                         "endpoint" => $this->args[2],
                         "method"   => $this->args[3],
-                        "key"  => $this->args[4]
+                        "api_key"  => $this->args[4]
                     ]);
                     return $grant->ok
                         ? $this->echo("OK") 

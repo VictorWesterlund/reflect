@@ -15,7 +15,7 @@
     class POST_ReflectAcl extends AuthDB implements Endpoint {
         public function __construct() {
             Rules::POST([
-                "key"  => [
+                "api_key"  => [
                     "required" => true,
                     "max"      => 32
                 ],
@@ -32,10 +32,11 @@
             parent::__construct(Connection::INTERNAL);
         }
 
-        // Generate truncated SHA256 hash to 32 chars of of input fields
-        public static function get_acl_hash(): string {
+        // Generate hash of ACL parameters.
+        // This will prevent the same ACL being defined more than once due to UNIQUE constraint fail on id column
+        public static function generate_hash(): string {
             return substr(hash("sha256", implode("", [
-                $_POST["key"],
+                $_POST["api_key"],
                 $_POST["endpoint"],
                 $_POST["method"]->value
             ])), -32);
@@ -48,7 +49,7 @@
             }
 
             // Check key is valid
-            if (!Call("reflect/key?id={$_POST["key"]}", Method::GET)->ok) {
+            if (!Call("reflect/key?id={$_POST["api_key"]}", Method::GET)->ok) {
                 return new Response("No API key with id '{$_POST["endpoint"]}' was found", 404);
             }
 
@@ -58,24 +59,21 @@
                 "Method '{$_POST["method"]}' is not a supported HTTP verb",
                 405
             ]);
-            
-            // Use hash of POST fields as id for ACL rule in database
-            $hash = $this::get_acl_hash();
 
             // Check if the rule has already been granted
-            if (Call("reflect/acl?id=${hash}", Method::GET)->ok) {
+            if (Call("reflect/acl?api_key={$_POST["api_key"]}&endpoint={$_POST["endpoint"]}&method={$_POST["method"]->value}", Method::GET)->ok) {
                 return new Response("ACL rule already exists", 402);
             }
 
             $sql = "INSERT INTO api_acl (id, api_key, endpoint, method, created) VALUES (?, ?, ?, ?, ?)";
             $insert = $this->return_bool($sql, [
-                $hash,
-                $_POST["key"],
+                // Get hash of parameters as row id
+                $this->generate_hash(),
+                $_POST["api_key"],
                 $_POST["endpoint"],
                 $_POST["method"]->value,
                 time()
             ]);
-
             return $insert
                 ? new Response("OK")
                 : new Response("Failed to create ACL rule");
