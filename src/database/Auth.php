@@ -19,6 +19,8 @@
                 ENV::get("mysql_pass"),
                 ENV::get("mysql_db")
             );
+
+            $this->con = $con;
         }
 
         // Return the API key to use for public/anonymous requests
@@ -29,20 +31,20 @@
         /* ---- */
 
         // Return bool user id is enabled
-        public function user_active(string $user): bool {
+        public function user_active(string|null $user): bool {
             // Internal connections have no API key, so return true
-            if ($this->get_default_key() === Connection::INTERNAL) {
+            if ($this->con === Connection::INTERNAL) {
                 return true;
             }
 
             $sql = "SELECT NULL FROM api_users WHERE id = ? AND active = 1";
-            return $this->return_bool($sql, $user);
+            return $this->return_bool($sql, strtoupper($user));
         }
 
         // Validate API key from GET parameter
         public function get_api_key(): string {
             // Internal connections have no API key, so return empty string
-            if ($this->get_default_key() === Connection::INTERNAL) {
+            if ($this->con === Connection::INTERNAL) {
                 return "";
             }
 
