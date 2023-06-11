@@ -28,7 +28,7 @@
             if (!empty($_GET["id"])) {
                 $sql = "SELECT id, active, created FROM api_users WHERE id = ?";
 
-                $res = $this->return_array($sql, $_GET["id"]);
+                $res = $this->return_array($sql, strtoupper($_GET["id"]));
                 return !empty($res) 
                     ? new Response($res[0]) 
                     : new Response(["No user", "No user with id '{$_GET["id"]}' was found"], 404);

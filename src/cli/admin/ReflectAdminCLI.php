@@ -128,7 +128,7 @@
                         : $this->error(["Failed to get users", $users]);
 
                 case "add":
-                    $name = $this->args[2];
+                    $name = strtoupper($this->args[2] ?? "");
 
                     if (empty($name)) {
                         return $this->error("Name can not be empty", "reflect user add <name>");
@@ -142,7 +142,7 @@
                     }
 
                     // Reactivate previously deactivated user
-                    if ($user->output()["active"] !== 1) {
+                    if ($user->ok && $user->output()["active"] !== 1) {
                         $reactivate = Call("reflect/user?id={$this->args[2]}", Method::PUT, [
                             "active" => true
                         ]);
@@ -161,20 +161,22 @@
                         : $this->error(["Failed to add user", $create]);
 
                 case "remove":
-                    if (empty($this->args[2])) {
+                    $name = strtoupper($name ?? "");
+
+                    if (empty($name)) {
                         return $this->error("Name can not be empty", "reflect user remove <name>");
                     }
 
                     // Check that the user does not already exist.
-                    $user = Call("reflect/user?id={$this->args[2]}", Method::GET);
+                    $user = Call("reflect/user?id=${name}", Method::GET);
 
                     // User does not exist
                     if (!$user->ok) {
-                        return $this->error("User '{$this->args[2]}' does not exist", 404);
+                        return $this->error("User '${name}' does not exist", 404);
                     }
 
                     // Delete user by id
-                    $delete = Call("reflect/user?id={$this->args[2]}", Method::DELETE);
+                    $delete = Call("reflect/user?id=${name}", Method::DELETE);
                     return $delete->ok 
                         ? $this->echo("OK") 
                         : $this->error(["Failed to delete user", $delete]);
