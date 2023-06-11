@@ -30,6 +30,11 @@
 
         // Return bool user id is enabled
         public function user_active(string $user): bool {
+            // Internal connections have no API key, so return true
+            if ($this->get_default_key() === Connection::INTERNAL) {
+                return true;
+            }
+
             $sql = "SELECT NULL FROM api_users WHERE id = ? AND active = 1";
             return $this->return_bool($sql, $user);
         }
