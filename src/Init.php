@@ -42,8 +42,8 @@
 		}
 
 		// Set environment variable key, value pair
-		public static function set(string $key, mixed $value = null): bool {
-			return $_ENV[self::NS][$key] = $value;
+		public static function set(string $key, mixed $value = null) {
+			$_ENV[self::NS][$key] = $value;
 		}
 
 		/* ---- */

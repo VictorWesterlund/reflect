@@ -11,12 +11,10 @@
 
     // Handle RESTful requests over AF_UNIX socket.
     class SocketServer {
-        public function __construct(string $path) {
-            // Can not access socket file
-            if (!is_writable(dirname($path))) {
-                throw new \Error("No permission: Cannot create socket file at '{$path}'");
-            }
+        // Socket transaction header size in bytes
+        const HEADER_LENGTH_BYTES = 64;
 
+        public function __construct(string $path) {
             // Delete existing socket file
             if (file_exists($path)) {
                 unlink($path);
@@ -33,9 +31,9 @@
         }
 
         // Convert message from client into simple PHP-styled presentation of HTTP request
-        private function rx(string $payload) {
+        private function request(string $request) {
             // Expecting ["<endpoint>","<method>","<payload>"]
-            [$uri, $_SERVER["REQUEST_METHOD"], $data] = json_decode($payload);
+            [$uri, $_SERVER["REQUEST_METHOD"], $data] = json_decode($request);
 
             // Request is malformed or connection interrupted, abort
             if (empty($uri)) {
@@ -56,8 +54,31 @@
             (new Router(Connection::AF_UNIX))->main();
         }
 
+        // Transmit outgoing data over socket as stringifed JSON
+        private function tx(\Socket &$client) {
+            $payload = json_encode([$code, $msg]);
+            $payload_size = strlen($payload);
+
+            // Write string byte length prefix in header
+            socket_write($client, $payload_size, self::HEADER_LENGTH_BYTES);
+            // Write payload bytes
+            socket_write($client, $payload, $payload_size);
+        }
+
+        // Receive data from socket and return as string
+        private function rx(\Socket &$client): string {
+            $length = (int) socket_read($client, self::HEADER_LENGTH_BYTES);
+            return socket_read($client, $length);
+        }
+
         private function txn() {
-            $this->client = socket_accept($this->socket);
+            // Create new connection for incoming request
+            $client = socket_accept($this->socket);
+
+            // Connect response transaction function
+            ENV::set("SOCKET_STDOUT", fn&(mixed $msg, int $code = 200) => $this->tx($client));
+
+            $this->request($this->rx($client));
         }
 
         // Stop server
@@ -72,18 +93,9 @@
             $con = true;
             $data = "";
 
-            // Create new socket for cross-communication
+            // Start new transaction on incoming request
             while ($con === true) {
-                $client = socket_accept($this->socket);
-
-                // Bind handler for outgoing data
-                ENV::set("SOCKET_STDOUT", function (mixed $msg, int $code = 200) use (&$client) {
-                    $tx = json_encode([$code, $msg]);
-                    socket_write($client, $tx, strlen($tx));
-                });
-
-                // Parse incoming data
-                $this->rx(socket_read($client, 2024));
+                $this->txn();
             }
 
             socket_close($client);
