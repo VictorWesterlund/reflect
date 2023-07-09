@@ -1,5 +1,6 @@
 {
     "require": {
-        "victorwesterlund/libmysqldriver": "^1.0"
+        "victorwesterlund/libmysqldriver": "^1.0",
+        "victorwesterlund/libsqlitedriver": "^1.0"
     }
 }

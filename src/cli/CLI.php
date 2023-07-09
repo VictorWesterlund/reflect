@@ -1,8 +1,17 @@
 <?php
 
+    namespace Reflect\CLI;
+
+    use \Reflect\Path;
+    use \Reflect\Response;
+
+    require_once Path::reflect("src/api/builtin/Response.php");
+
     if (php_sapi_name() !== "cli") {
         die("Must be run from command line");
     }
+
+    error_reporting(E_ALL ^ E_WARNING); 
 
     class CLI {
         public function __construct(array $args, int $arglen) {
@@ -26,6 +35,16 @@
         }
 
         public function echo(mixed $msg) {
+            // Get message from
+            if ($msg instanceof Response) {
+                // Response is not OK. Show as error message
+                if (!$msg->ok) {
+                    return $this->error($msg->output());
+                }
+
+                $msg = $msg->output();
+            }
+
             if (!is_string($msg)) {
                 $msg = json_encode($msg);
             }
@@ -33,12 +52,17 @@
             echo $msg . "\n";
         }
 
-        public function error(mixed $msg) {
+        public function error(mixed $msg, string $expected = null) {
             if (!is_string($msg)) {
                 $msg = json_encode($msg);
             }
 
-            return $this->echo("ERROR: " . $msg);
+            $this->echo("\e[41mERROR: ${msg}\e[0m");
+
+            // Error has an expected format it wants to show
+            if (!empty($expected)) {
+                $this->echo("\e[91mExpected:\e[0m " . $expected);
+            }
         }
 
         public function list(array $items) {

@@ -1,5 +1,8 @@
 <?php
 
+    use \Reflect\Path;
+    use \Reflect\CLI\ReflectAdminCLI;
+
     require_once "src/Init.php";
     require_once Path::reflect("src/cli/admin/ReflectAdminCLI.php");
 

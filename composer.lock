@@ -4,20 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "808af43d8846a421d3b3a19d7da01f65",
+    "content-hash": "d3ebdd47596b2554b343b327c398f003",
     "packages": [
         {
             "name": "victorwesterlund/libmysqldriver",
-            "version": "1.0.2",
+            "version": "1.1.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/VictorWesterlund/php-libmysqldriver.git",
-                "reference": "bbfb31707a8a7c1f71cc844aedac8fd346324432"
+                "reference": "740d61a89b89de616802a2094ada84370f0ece5b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/VictorWesterlund/php-libmysqldriver/zipball/bbfb31707a8a7c1f71cc844aedac8fd346324432",
-                "reference": "bbfb31707a8a7c1f71cc844aedac8fd346324432",
+                "url": "https://api.github.com/repos/VictorWesterlund/php-libmysqldriver/zipball/740d61a89b89de616802a2094ada84370f0ece5b",
+                "reference": "740d61a89b89de616802a2094ada84370f0ece5b",
                 "shasum": ""
             },
             "type": "library",
@@ -39,9 +39,46 @@
             "description": "Abstraction library for common mysqli features",
             "support": {
                 "issues": "https://github.com/VictorWesterlund/php-libmysqldriver/issues",
-                "source": "https://github.com/VictorWesterlund/php-libmysqldriver/tree/1.0.2"
+                "source": "https://github.com/VictorWesterlund/php-libmysqldriver/tree/1.1.1"
             },
-            "time": "2023-04-24T15:14:46+00:00"
+            "time": "2023-06-11T10:02:12+00:00"
+        },
+        {
+            "name": "victorwesterlund/libsqlitedriver",
+            "version": "1.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/VictorWesterlund/php-libsqlitedriver.git",
+                "reference": "302d0cbad060176de114181a63a3a6d98d05fc26"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/VictorWesterlund/php-libsqlitedriver/zipball/302d0cbad060176de114181a63a3a6d98d05fc26",
+                "reference": "302d0cbad060176de114181a63a3a6d98d05fc26",
+                "shasum": ""
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "libsqlitedriver\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-3.0-only"
+            ],
+            "authors": [
+                {
+                    "name": "Victor Westerlund",
+                    "email": "victor.vesterlund@gmail.com"
+                }
+            ],
+            "description": "Abstraction library for common SQLite features",
+            "support": {
+                "issues": "https://github.com/VictorWesterlund/php-libsqlitedriver/issues",
+                "source": "https://github.com/VictorWesterlund/php-libsqlitedriver/tree/1.1.0"
+            },
+            "time": "2023-05-30T10:55:56+00:00"
         }
     ],
     "packages-dev": [],

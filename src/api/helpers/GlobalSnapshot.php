@@ -1,9 +1,10 @@
 <?php
 
+    namespace Reflect\Helpers;
+
     // Capture the current state of all superglobals.
-    // This will save a copy of all keys and values and any changes
-    // made to the superglobals can be restored to this point in time
-    // by calling $this->restore();
+    // This will save a copy of all keys and values and any changes made to the superglobals 
+    // can be restored to this point in time by calling $this->restore();
     class GlobalSnapshot {
         public function __construct() {
             foreach (array_keys($GLOBALS) as $global) {

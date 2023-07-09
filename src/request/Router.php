@@ -1,6 +1,19 @@
 <?php
 
+    namespace Reflect\Request;
+
+    use \Reflect\Path;
+    use \Reflect\Response;
+    use \Reflect\Database\AuthDB;
+    use \Reflect\Database\IdempDB;
+
     require_once Path::reflect("src/database/Auth.php");
+    require_once Path::reflect("src/database/Idemp.php");
+
+    // These builtins should be exposed to endpoints in userspace
+    require_once Path::reflect("src/api/builtin/Response.php");
+    require_once Path::reflect("src/api/builtin/Rules.php");
+    require_once Path::reflect("src/api/builtin/Call.php");
 
     // Client/server connection medium
     enum Connection {
@@ -9,26 +22,41 @@
         case INTERNAL;
     }
 
-    // This is the dynamic request router used to translate a
-    // RESTful request into a PHP class. It also checks each
-    // request against AuthDB to make sure the provided key has
-    // access to the requested endpoint with method.
+    // Allowed HTTP verbs
+    enum Method: string {
+        case GET     = "GET";
+        case POST    = "POST";
+        case PUT     = "PUT";
+        case DELETE  = "DELETE";
+        case PATCH   = "PATCH";
+        case OPTIONS = "OPTIONS";
+    }
+
+    // This is the dynamic request router used to translate a RESTful request into a PHP class. It also checks each
+    // request against AuthDB to make sure the provided key has access to the requested endpoint with method.
     class Router extends AuthDB {
-        // A request initiator must provide the connection type
-        // it wish to use. This allows the router to reply in a
-        // correct manner.
+        // A request initiator must provide the connection typeit wish to use.
+        // This allows the router to reply in a correct manner.
         public function __construct(private Connection $con) {
-            // Set HTTP as the default connection type and JSON as
-            // the default response Content-Type
-            if ($this->con === Connection::HTTP) {
-                header("Content-Type: application/json");
-            }
+            // Parse request method string into Enum
+            $this->method = Method::tryFrom($_SERVER["REQUEST_METHOD"]) ?? new Response("Method not allowed", 405);
 
             $this->endpoint = $this::get_endpoint();
 
             // Open connection to AuthDB
             $this->con = $con;
             parent::__construct($this->con);
+
+            // Return available endpoints for API key and exit here
+            // if the method is OPTIONS.
+            if ($this->method === Method::OPTIONS) {
+                return new Response($this->get_options($this->endpoint), 200);
+            }
+        }
+
+        // Polyfill for loading parameters from a JSON request body into $_POST
+        private static function load_json_payload() {
+            return $_POST = json_decode(file_get_contents("php://input"), true) ?? [];
         }
 
         // Get the requested endpoint from request URL
@@ -41,112 +69,67 @@
             return $path;
         }
 
-        // Turn "/path/to/endpoint" into "PathToEndpoint" which will be the 
-        // name of the class to instantiate when called.
+        // Turn "/path/to/endpoint" into "PathToEndpoint" which will be the name of the class to instantiate when called.
         private function get_endpoint_class(): string {
             // Create crumbs from path
             $path = explode("/", $this->endpoint);
 
-            // Make each crumb lowercase so we can strip duplicates. That way
-            // we don't en up with silly class names like "OrderOrder" etc.
+            // Make each crumb lowercase so we can strip duplicates. That way we don't en up with silly class names like "OrderOrder" etc.
             $path = array_unique(array_map(fn($crumb) => strtolower($crumb), $path));
 
             // Capitalize each crumb
             $path = array_map(fn($crumb) => ucfirst($crumb), $path);
 
-            // Return path as _PascalCaseFromCrumbs (with leading "_")
-            return "_" . implode("", $path);
+            // Return path as METHOD_PascalCaseFromCrumbs
+            return implode("_", [$this->method->value, implode("", $path)]);
         }
 
-        // Exit with output on a router level. This is used for
-        // errors with the request itself or for control requests
-        // such as HTTP method "OPTIONS".
-        private function exit_here(mixed $msg, int $code = 200) {
-            if ($this->con === Connection::INTERNAL) {
-                return $msg;
-            }
-
-            if ($this->con === Connection::AF_UNIX) {
-                return $_ENV["SOCKET_STDOUT"](json_encode($msg), $code);
-            }
-
-            // For Connection::HTTP
-            http_response_code($code);
-            exit(json_encode($msg));
-        }
-
-        // Wrapper for exit_here() but sets some standard error
-        // formatting before sent to output.
-        private function exit_here_with_error(string $error, int $code = 500, mixed $msg = null) {
-            return $this->exit_here([
-                "error"     => $error,
-                "errorCode" => $code,
-                "details"   => $msg
-            ], $code);
-        }
-
-        // Call an API endpoint by parsing a RESTful request, checking key
-        // permissions against AuthDB, and initializing the endpoint handler class.
-        // This is the default request flow.
-        public function main() {
-            $test = $this->endpoint;
-            // Request URLs starting with "reflect/" are reserved and should read from the internal endpoints located at /src/api/
-            $file = substr($this->endpoint, 0, 8) !== "reflect/"
+        // Request URLs starting with "reflect/" are reserved and should read from the internal endpoints located at /src/api/
+        private function get_endpoint_file_path(): string {
+            return substr($this->endpoint, 0, 8) !== "reflect/"
                 // User endpoints are kept in folders with 'index.php' as the file to run
-                ? Path::root("api/{$this->endpoint}/index.php")
+                ? Path::root("endpoints/{$this->endpoint}/{$this->method->value}.php")
                 // Internal endpoints are stored as named files
-                : Path::reflect("src/api/{$this->endpoint}.php");
+                : Path::reflect("src/api/{$this->endpoint}/{$this->method->value}.php");
+        }
 
-            // Check that the endpoint exists
-            if (!file_exists($file)) {
-                return $this->exit_here_with_error("No endpoint", 404, "The requested endpoint does not exist");
-            }
-
-            // Return available endpoints for API key and exit here
-            // if the method is OPTIONS.
-            if ($_SERVER["REQUEST_METHOD"] === "OPTIONS") {
-                return $this->exit_here($this->get_options($this->endpoint), 200);
-            }
-
-            // Check if user has permission to call this endpoint
-            if (!$this->check($this->endpoint, $_SERVER["REQUEST_METHOD"])) {
-                return $this->exit_here_with_error("Forbidden", 403, "You do not have permission to call this endpoint. Send OPTIONS request to this endpoint for list of allowed methods");
-            }
-
-            // Import endpoint code from file
-            require_once $file;
-
-            // Instantiate default endpoint class
+        // Call an API endpoint by parsing a RESTful request, checking key permissions against AuthDB,
+        // and initializing the endpoint handler class. This is the default request flow.
+        public function main(): Response {
+            // Resolve endpoint file path from pathname and method
+            $file = $this->get_endpoint_file_path();
+            // Resolve class name from pathname and method
             $class = $this->get_endpoint_class();
+
+            // Check that the endpoint exists and that the user is allowed to call it
+            if (!file_exists($file) || !$this->check($this->endpoint, $this->method)) {
+                return new Response(["No endpoint", "Endpoint not found or insufficient permissions for the requested method"], 404);
+            }
+
+            // Import endpoint code if not already loaded
             if (!class_exists($class)) {
-                return $this->exit_here_with_error("Service unavailable", 503, "Endpoint is not configured yet");
-            }
+                require_once $file;
 
-            // Initialize API endpoint
-            $api = new $class();
-            // Pass connection type
-            $api->set_connection($this->con);
-
-            // Check input constraints for API before running endpoint method
-            if (in_array($_SERVER["REQUEST_METHOD"], ["POST", "PUT", "PATCH"])) {
-                // Parse JSON payload from client into superglobal.
-                // $_POST will be used for all methods containing a client payload.
-                if ($this->con !== Connection::INTERNAL && !empty($_SERVER["HTTP_CONTENT_TYPE"]) && $_SERVER["HTTP_CONTENT_TYPE"] === "application/json") {
-                    $_POST = JSON::load("php://input") ?? [];
-                }
-
-                $constr = $api->input_constraints();
-                if ($constr !== true) {
-                    return $this->exit_here_with_error(...$constr);
+                /*
+                    Invalid class name if the class doesn't exist after import.
+                    The class name should be a PascalCase representation of the endpoint path.
+                    Eg. /foo/bar should have a class name FooBar inside a <METHOD>.php file
+                */
+                if (!class_exists($class)) {
+                    return new Response(["Internal Server Error", "Class anchor broken"], 500);
                 }
             }
 
-            // Call method from imported class (_GET(), _POST() etc.)
-            $method = "_{$_SERVER["REQUEST_METHOD"]}";
-            if (!method_exists($api, $method)) {
-                return $this->exit_here_with_error("Method not allowed", 405, "The endpoint does not implement the method sent with your request");
+            // Parse JSON payload from client into superglobal.
+            // $_POST will be used for all methods containing a client payload.
+            if ($this->con !== Connection::INTERNAL && !empty($_SERVER["HTTP_CONTENT_TYPE"]) && $_SERVER["HTTP_CONTENT_TYPE"] === "application/json") {
+                $this->load_json_payload();
             }
 
-            return $api->$method();
+            // Create instance of endpoint class
+            $endpoint = new $class();
+
+            // Run main() method from endpoint class or return No Content respone if the endpoint didn't return
+            return $endpoint->main() ?? new Response("", 204);
         }
     }

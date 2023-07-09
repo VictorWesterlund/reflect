@@ -1,5 +1,8 @@
 <?php
 
+    use \Reflect\Path;
+    use \Reflect\CLI\SocketServerCLI;
+
     require_once "src/Init.php";
     require_once Path::reflect("src/cli/socket/SocketServerCLI.php");
 
