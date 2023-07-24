@@ -14,6 +14,8 @@
     error_reporting(E_ALL ^ E_WARNING); 
 
     class CLI {
+        protected array $args;
+        
         public function __construct(array $args, int $arglen) {
             // Get all CLI args except name of script file
             array_shift($args);
@@ -57,7 +59,7 @@
                 $msg = json_encode($msg);
             }
 
-            $this->echo("\e[41mERROR: ${msg}\e[0m");
+            $this->echo("\e[41mERROR: {$msg}\e[0m");
 
             // Error has an expected format it wants to show
             if (!empty($expected)) {

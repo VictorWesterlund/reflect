@@ -12,7 +12,9 @@
     class AuthDB extends MySQLDriver {
         public const DEFAULT_PUBLIC_API_KEY = "PUBLIC_API_KEY";
 
-        public function __construct(private Connection $con) {
+        private Connection $con;
+
+        public function __construct(Connection $con) {
             parent::__construct(
                 ENV::get("mysql_host"),
                 ENV::get("mysql_user"),

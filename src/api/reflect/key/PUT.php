@@ -13,6 +13,28 @@
     require_once Path::reflect("src/database/Auth.php");
 
     class PUT_ReflectKey extends AuthDB implements Endpoint {
+        private const POST = [
+            "id"      => [
+                "required" => false,
+                "type"     => "string",
+                "min"      => 1,
+                "max"      => 128
+            ],
+            "user"    => [
+                "required" => false,
+                "type"     => "string"
+            ],
+            "active"  => [
+                "required" => false,
+                "type"     => "boolean"
+            ],
+            "expires" => [
+                "required" => false,
+                "type"     => "int",
+                "max"      => PHP_INT_MAX
+            ]
+        ];
+
         public function __construct() {
             Rules::GET([
                 "id" => [
@@ -22,27 +44,7 @@
                 ]
             ]);
 
-            Rules::POST([
-                "id"      => [
-                    "required" => false,
-                    "type"     => "string",
-                    "min"      => 1,
-                    "max"      => 128
-                ],
-                "user"    => [
-                    "required" => false,
-                    "type"     => "string"
-                ],
-                "active"  => [
-                    "required" => false,
-                    "type"     => "boolean"
-                ],
-                "expires" => [
-                    "required" => false,
-                    "type"     => "int",
-                    "max"      => PHP_INT_MAX
-                ]
-            ]);
+            Rules::POST(self::POST);
 
             parent::__construct(Connection::INTERNAL);
         }
@@ -66,16 +68,13 @@
                 return new Response(["No user with id '{$_POST["user"]}' was found"], 404);
             }
 
-            // Filter out values from $_POST that should not go into prepared statement
-            $values = array_intersect_key($_POST, array_flip(array_keys($this::POST)));
-            // Overwrite existing values in database with values from $_POST
-            $values = array_merge($key->output(), $values);
+            $values = array_map(fn($k): mixed => is_null($_POST[$k]) ? $key->output()[$k] : $_POST[$k], array_keys(self::POST));
 
             // Append ID of current key to use as reference in WHERE statement later
             $values[] = $_GET["id"];
 
             // Execute query with SQL string and the array of values we prepared earlier
-            $sql = "UPDATE api_keys SET id = ?, user = ?, active = ?, expires = ?, created = ? WHERE id = ?";
+            $sql = "UPDATE api_keys SET id = ?, user = ?, active = ?, expires = ? WHERE id = ?";
             return $this->return_bool($sql, array_values($values))
                 ? new Response("OK")
                 : new Response("Failed to update key", 500);

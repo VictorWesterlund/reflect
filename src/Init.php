@@ -80,7 +80,7 @@
 
 		// Get path to the default API class
 		public static function init(): string {
-			return (__CLASS__)::reflect("src/api/API.php");
+			return self::reflect("src/api/API.php");
 		}
 
 		// Get path to or relative path from the user's configured root

@@ -36,7 +36,7 @@
             $this->return_bool($sql, [$_POST["endpoint"], 1]);
 
             // Ensure the endpoint was successfully created
-            $created = Call("reflect/endpoint?id=${endpoint}", Method::GET);
+            $created = Call("reflect/endpoint?id={$_POST["endpoint"]}", Method::GET);
             return $created->ok
                 ? new Response("OK")
                 : new Response(["Failed to create endpoint", $created], 500);

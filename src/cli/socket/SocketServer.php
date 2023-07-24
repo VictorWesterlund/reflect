@@ -14,6 +14,8 @@
         // Socket transaction header size in bytes
         const HEADER_LENGTH_BYTES = 64;
 
+        private resource $socket;
+
         public function __construct(string $path) {
             // Delete existing socket file
             if (file_exists($path)) {

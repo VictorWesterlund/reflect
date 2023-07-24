@@ -85,7 +85,7 @@
                     }
 
                     // Check that the endpoint does not already exist.
-                    if (Call("reflect/endpoint?id=${endpoint}", Method::GET)->ok) {
+                    if (Call("reflect/endpoint?id={$endpoint}", Method::GET)->ok) {
                         return $this->error("Endpoint already exists");
                     }
 
@@ -108,12 +108,12 @@
                     }
 
                     // Endpoint doesn't exist
-                    if (!Call("reflect/endpoint?id=${endpoint}", Method::GET)->ok) {
+                    if (!Call("reflect/endpoint?id={$endpoint}", Method::GET)->ok) {
                         return $this->error($check);
                     };
 
                     // Delete endpoint by id
-                    return $this->echo(Call("reflect/endpoint?id=${endpoint}", Method::DELETE));
+                    return $this->echo(Call("reflect/endpoint?id={$endpoint}", Method::DELETE));
 
                 default:
                     return $this->error("Expected endpoint operation", "reflect endpoint <list/add/remove>");
@@ -135,11 +135,11 @@
                         return $this->error("Name can not be empty", "reflect user add <name>");
                     }
 
-                    $user = Call("reflect/user?id=${name}", Method::GET);
+                    $user = Call("reflect/user?id={$name}", Method::GET);
 
                     // Check that the user does not already exist.
                     if ($user->ok && $user->output()["active"]) {
-                        return $this->error("User '${name}' already exists");
+                        return $this->error("User '{$name}' already exists");
                     }
 
                     // Reactivate previously deactivated user
@@ -169,15 +169,15 @@
                     }
 
                     // Check that the user does not already exist.
-                    $user = Call("reflect/user?id=${name}", Method::GET);
+                    $user = Call("reflect/user?id={$name}", Method::GET);
 
                     // User does not exist
                     if (!$user->ok) {
-                        return $this->error("User '${name}' does not exist", 404);
+                        return $this->error("User '{$name}' does not exist", 404);
                     }
 
                     // Delete user by id
-                    $delete = Call("reflect/user?id=${name}", Method::DELETE);
+                    $delete = Call("reflect/user?id={$name}", Method::DELETE);
                     return $delete->ok 
                         ? $this->echo("OK") 
                         : $this->error(["Failed to delete user", $delete]);
@@ -284,7 +284,7 @@
                     ]);
                     return $grant->ok
                         ? $this->echo("OK") 
-                        : $this->error(["Failed to grant ACL rule", $grant]);
+                        : $this->error($grant->output());
 
                 case "deny":
                     if (empty($this->args[2]) || empty($this->args[3]) || empty($this->args[4])) {
@@ -294,7 +294,7 @@
                     $delete = Call("reflect/acl?endpoint={$this->args[2]}&method={$this->args[3]}&api_key={$this->args[4]}", Method::DELETE);
                     return $delete->ok
                         ? $this->echo("OK") 
-                        : $this->error(["Failed to remove ACL rule", $delete]);
+                        : $this->error($delete->output());
 
                 default:
                     return $this->error("Expected ACL operation", "reflect acl <list/grant/deny>");
