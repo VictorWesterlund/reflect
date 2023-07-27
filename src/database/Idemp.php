@@ -38,7 +38,7 @@
             $db = crc32(implode("", [$_ENV[ENV]["mysql_host"], $_ENV[ENV]["mysql_db"]]));
 
             // Build path from root and database name with extension
-            return "{$_ENV[ENV]["idempotency"]}${db}.db";
+            return "{$_ENV[ENV]["idempotency"]}{$db}.db";
         }
 
         // Returns true if a provided UUID exists in database

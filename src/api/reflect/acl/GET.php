@@ -58,10 +58,10 @@
             if (!empty($filter)) {
                 // Generate SELECT values for prepared statement
                 // TODO: This is dumb and should be handled by the database library!
-                $values = array_map(fn($v): string => "${v} = ?", $filter);
+                $values = array_map(fn($v): string => "{$v} = ?", $filter);
                 $values = implode(" AND ", $values);
 
-                $sql = "SELECT endpoint, method, api_key FROM api_acl WHERE ${values}";
+                $sql = "SELECT endpoint, method, api_key FROM api_acl WHERE {$values}";
                 $res = $this->return_array($sql, array_map(fn($k): string => $_GET[$k], $filter));
 
                 return !empty($res) 

@@ -11,6 +11,9 @@
     require_once Path::reflect("src/cli/socket/SocketServer.php");
 
     class SocketServerCLI extends CLI {
+        private string $socket;
+        private SocketServer $server;
+
         public function __construct(array $args) {
             parent::__construct($args, 1);
 

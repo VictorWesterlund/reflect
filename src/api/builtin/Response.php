@@ -12,6 +12,12 @@
 
     // Create a new reponse that will automatically output to the correct, current, connection channel
     class Response {
+        public int $ok;
+        public int $code;
+        public ContentType $type;
+
+        private mixed $output;
+
         public function __construct(mixed $output, int $code = 200, ContentType $type = ContentType::JSON) {
             $this->output = $output;
             $this->type = $type;
@@ -30,12 +36,9 @@
                 } else {
                     $this->stdout_http();
                 }
+            } else {
+                $this->output();
             }
-        }
-
-        // Request is internal. We don't care about the code here since the data will be used first-hand
-        private function stdout_internal() {
-            return $this->output;
         }
 
         // Echo the output

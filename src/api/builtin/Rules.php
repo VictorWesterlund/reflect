@@ -8,19 +8,19 @@
         // String or number can not be shorter/smaller than constraint
         public static function rule_min(string|int|null $value, int $cstr): string|bool {
             if (is_string($value)) {
-                return strlen($value) >= $cstr ?: "Length has to exceed ${cstr} characters";
+                return strlen($value) >= $cstr ?: "Length has to exceed {$cstr} characters";
             }
 
-            return $value <= $cstr ?: "Size have to be larger than ${cstr}";
+            return $value <= $cstr ?: "Size have to be larger than {$cstr}";
         }
 
         // String or number can not be longer/larger than constraint
         public static function rule_max(string|int|null $value, int $cstr): string|bool {
             if (is_string($value)) {
-                return strlen($value) <= $cstr ?: "Length can not exceed ${cstr} characters";
+                return strlen($value) <= $cstr ?: "Length can not exceed {$cstr} characters";
             }
 
-            return $value <= $cstr ?: "Size can not be larger than ${cstr}";
+            return $value <= $cstr ?: "Size can not be larger than {$cstr}";
         }
 
         // Return true if string matches an arbitrary "type" pattern
@@ -81,7 +81,7 @@
             $value = $target[$field] ?? "";
 
             // Match value and return result
-            return (__CLASS__)::$rule($value, $cstr);
+            return self::$rule($value, $cstr);
         }
 
         private static function match_all(array $all_rules, array &$target): array {
@@ -101,7 +101,7 @@
                 }
 
                 // Rule is not required and not present in $target
-                if (empty($target[$field]) && $rules["required"] === false) {
+                if (!isset($target[$field]) && $rules["required"] === false) {
                     // Set to null so endpoints don't have to check for key existance
                     $target[$field] = null;
                     continue;
@@ -109,7 +109,7 @@
 
                 // Loop over each rule (and constraint) for field
                 foreach ($rules as $rule => $cstr) {
-                    $match = (__CLASS__)::match($field, $rule, $cstr, $target);
+                    $match = self::match($field, $rule, $cstr, $target);
 
                     // Rule does not match
                     if ($match !== true) {
@@ -125,7 +125,7 @@
 
         // Enforce GET parameters on search params
         public static function GET(array $rules): bool|Response {
-            $errors = (__CLASS__)::match_all($rules, $_GET);
+            $errors = self::match_all($rules, $_GET);
             return empty($errors) ?: new Response([
                 "Missing search parameters" => "The following search (GET) parameters did not meet their requirements",
                 "Errors"                    => $errors
@@ -134,7 +134,7 @@
 
         // Enforce POST paramters on request body
         public static function POST(array $rules): bool|Response {
-            $errors = (__CLASS__)::match_all($rules, $_POST);
+            $errors = self::match_all($rules, $_POST);
             return empty($errors) ?: new Response([
                 "Missing request body parameters" => "The following request body (POST) parameters did not meet their requirements",
                 "Errors"                          => $errors

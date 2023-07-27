@@ -35,9 +35,13 @@
     // This is the dynamic request router used to translate a RESTful request into a PHP class. It also checks each
     // request against AuthDB to make sure the provided key has access to the requested endpoint with method.
     class Router extends AuthDB {
+        private Method $method;
+        private string $endpoint;
+        private Connection|null $con;
+
         // A request initiator must provide the connection typeit wish to use.
         // This allows the router to reply in a correct manner.
-        public function __construct(private Connection $con) {
+        public function __construct(Connection $con) {
             // Parse request method string into Enum
             $this->method = Method::tryFrom($_SERVER["REQUEST_METHOD"]) ?? new Response("Method not allowed", 405);
 
