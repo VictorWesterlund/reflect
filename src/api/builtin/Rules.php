@@ -36,7 +36,17 @@
 
                 case "boolean":
                 case "bool":
-                    return is_bool($value) ?: "Must be of type boolean";
+                    if (is_bool($value)) {
+                        return $value;
+                    }
+
+                    // Coercive boolean from string
+                    return in_array($value, [
+                        "true",
+                        "yes",
+                        "false",
+                        "no"
+                    ]) ?: "Must be of type boolean";
 
                 case "object":
                 case "array":
