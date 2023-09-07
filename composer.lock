@@ -4,20 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "d3ebdd47596b2554b343b327c398f003",
+    "content-hash": "484f6f4f088dfd9b5a924bff9eb97410",
     "packages": [
         {
             "name": "victorwesterlund/libmysqldriver",
-            "version": "1.1.1",
+            "version": "2.0.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/VictorWesterlund/php-libmysqldriver.git",
-                "reference": "740d61a89b89de616802a2094ada84370f0ece5b"
+                "reference": "e501a617125c84a5d3ada5d1a92254aefe545e09"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/VictorWesterlund/php-libmysqldriver/zipball/740d61a89b89de616802a2094ada84370f0ece5b",
-                "reference": "740d61a89b89de616802a2094ada84370f0ece5b",
+                "url": "https://api.github.com/repos/VictorWesterlund/php-libmysqldriver/zipball/e501a617125c84a5d3ada5d1a92254aefe545e09",
+                "reference": "e501a617125c84a5d3ada5d1a92254aefe545e09",
                 "shasum": ""
             },
             "type": "library",
@@ -39,9 +39,9 @@
             "description": "Abstraction library for common mysqli features",
             "support": {
                 "issues": "https://github.com/VictorWesterlund/php-libmysqldriver/issues",
-                "source": "https://github.com/VictorWesterlund/php-libmysqldriver/tree/1.1.1"
+                "source": "https://github.com/VictorWesterlund/php-libmysqldriver/tree/2.0.1"
             },
-            "time": "2023-06-11T10:02:12+00:00"
+            "time": "2023-09-06T13:41:25+00:00"
         },
         {
             "name": "victorwesterlund/libsqlitedriver",

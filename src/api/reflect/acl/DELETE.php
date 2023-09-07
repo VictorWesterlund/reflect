@@ -47,7 +47,7 @@
 
             // Attempt to delete rule from database
             $sql = "DELETE FROM api_acl WHERE endpoint = ? AND method = ? AND api_key = ?";
-            $this->return_bool($sql, [
+            $this->exec($sql, [
                 $_GET["endpoint"],
                 $_GET["method"],
                 $_GET["api_key"]

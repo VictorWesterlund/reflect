@@ -39,8 +39,7 @@
                 return true;
             }
 
-            $sql = "SELECT NULL FROM api_users WHERE id = ? AND active = 1";
-            return $this->return_bool($sql, strtoupper($user));
+            return $this->get("api_users", null, ["active" => strtoupper($user)]);
         }
 
         // Validate API key from GET parameter
@@ -65,10 +64,8 @@
             }
 
             // Check that key exists, is active, and not expired (now > created && now < expires)
-            $sql = "SELECT user FROM api_keys WHERE id = ? 
-            AND active = 1 AND CURRENT_TIMESTAMP() BETWEEN `created` AND COALESCE(`expires`, NOW())";
-
-            $res = $this->return_array($sql, $key);
+            $sql = "SELECT user FROM api_keys WHERE id = ? AND active = 1 AND CURRENT_TIMESTAMP() BETWEEN `created` AND COALESCE(`expires`, NOW())";
+            $res = $this->exec($sql, $key);
             
             // Return key from request or default to anonymous key if it's invalid
             return !empty($res) && $this->user_active($res[0]["user"]) ? $key : $this->get_default_key();
@@ -76,17 +73,22 @@
 
         // Return bool endpoint enabled
         public function endpoint_active(string $endpoint): bool {
-            $sql = "SELECT NULL FROM api_endpoints WHERE endpoint = ? AND active = 1 LIMIT 1";
-            return $this->return_bool($sql, $endpoint);
+            return $this->get("api_endpoints", null, [
+                "endpoint" => $endpoint,
+                "active"   => 1
+            ], 1);
         }
 
         // Return all available request methods to endpoint with key
         public function get_options(string $endpoint): array {
-            $sql = "SELECT method FROM api_acl WHERE api_key = ? AND endpoint = ?";
-            $res = $this->return_array($sql, [ $this->get_api_key(), $endpoint ]);
+            $filter = [
+                "api_key"  => $this->get_api_key(),
+                "emdpoint" => $endpoint
+            ];
             
             // Flatten array to only values of "method"
-            return !empty($res) ? array_column($res, "method") : [];
+            $acl = $this->get("api_acl", ["method"], $filter, 1);
+            return !empty($acl) ? array_column($acl, "method") : [];
         }
 
         // Check if API key is authorized to call endpoint using method
@@ -103,24 +105,22 @@
 
             // Get API key from request
             $key = $this->get_api_key();
+            $filter = [
+                "api_key"  => $key,
+                "endpoint" => $endpoint,
+                "method"   => $method->value
+            ];
 
             // Check if the API key has access to the requested endpoint and method
-            $sql = "SELECT NULL FROM api_acl WHERE api_key = ? AND endpoint = ? AND method = ? LIMIT 1";
-            $res = $this->return_bool($sql, [
-                $key,
-                $endpoint,
-                $method->value
-            ]);
+            $has_access = $this->get("api_acl", null, $filter, 1);
 
             // API key does not have access. So let's check again using the default public API key
-            if (empty($res)) {
-                $res = $this->return_bool($sql, [
-                    $this->get_default_key(),
-                    $endpoint,
-                    $method->value
-                ]);
+            if (empty($has_access)) {
+                $filter["api_key"] = $this->get_default_key();
+                
+                $has_access = $this->get("api_acl", $filter, 1);
             }
 
-            return !empty($res);
+            return !empty($has_access);
         }
     }

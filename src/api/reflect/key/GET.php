@@ -11,6 +11,14 @@
     require_once Path::reflect("src/database/Auth.php");
 
     class GET_ReflectKey extends AuthDB implements Endpoint {
+        private const COLUMNS = [
+            "id",
+            "user",
+            "active",
+            "expires",
+            "created"
+        ];
+
         public function __construct() {
             Rules::GET([
                 "id" => [
@@ -24,18 +32,22 @@
         }
 
         public function main(): Response {
+            // Filter only active API keys
+            $filter = [
+                "active" => 1
+            ];
+
             // Return bool if Reflect API key exists and is active by id
             if (!empty($_GET["id"])) {
-                $sql = "SELECT id, user, active, expires, created FROM api_keys WHERE id = ? AND active = 1";
+                $filter["id"] = $_GET["id"];
+                $key = $this->get("api_keys", self::COLUMNS, $filter, 1);
 
-                $res = $this->return_array($sql, $_GET["id"]);
-                return !empty($res) 
-                    ? new Response($res[0]) 
+                return !empty($key) 
+                    ? new Response($key) 
                     : new Response(["No key", "No API key with id '{$_GET["id"]}' was found"], 404);
             }
 
             // Return array of all active keys
-            $sql = "SELECT id, user, active, expires, created FROM api_keys WHERE active = 1";
-            return new Response($this->return_array($sql));
+            return new Response($this->get("api_keys", self::COLUMNS, $filter));
         }
     }

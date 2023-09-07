@@ -50,8 +50,7 @@
             $_POST["id"] = !empty($_POST["id"]) ? $_POST["id"] : $this->derive_key();
 
             // Attempt to insert key
-            $sql = "INSERT INTO api_keys (id, user, expires, created) VALUES (?, ?, ?, ?)";
-            $res = $this->return_bool($sql, [
+            $insert = $this->insert("api_keys", [
                 $_POST["id"],
                 // Set user id
                 $_POST["user"],
@@ -61,8 +60,8 @@
                 time()
             ]);
 
-            return !empty($res) 
-                ? new Response($_POST["id"])
+            return !empty($insert) 
+                ? new Response($_POST["id"]) // Return API key
                 : new Response("Failed to create API key", 500);
         }
     }

@@ -68,14 +68,11 @@
                 return new Response(["No user with id '{$_POST["user"]}' was found"], 404);
             }
 
+            // Get all values from $_POST that exist in self::POST
             $values = array_map(fn($k): mixed => is_null($_POST[$k]) ? $key->output()[$k] : $_POST[$k], array_keys(self::POST));
 
-            // Append ID of current key to use as reference in WHERE statement later
-            $values[] = $_GET["id"];
-
             // Execute query with SQL string and the array of values we prepared earlier
-            $sql = "UPDATE api_keys SET id = ?, user = ?, active = ?, expires = ? WHERE id = ?";
-            return $this->return_bool($sql, array_values($values))
+            return $this->update("api_keys", $values, ["id" => $_GET["id"]])
                 ? new Response("OK")
                 : new Response("Failed to update key", 500);
         }
