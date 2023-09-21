@@ -18,6 +18,7 @@
 
         private int $argc;
         private array $argv;
+        private ?array $__composer_autoload_files;
 
         public function __construct() {
             foreach (array_keys($GLOBALS) as $global) {

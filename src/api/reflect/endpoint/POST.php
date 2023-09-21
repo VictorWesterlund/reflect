@@ -32,8 +32,7 @@
 
         public function main(): Response {
             // Attempt to INSERT new endpoint
-            $sql = "INSERT INTO api_endpoints (endpoint, active) VALUES (?, ?)";
-            $this->return_bool($sql, [$_POST["endpoint"], 1]);
+            $this->insert("api_endpoints", [$_POST["endpoint"], 1]);
 
             // Ensure the endpoint was successfully created
             $created = Call("reflect/endpoint?id={$_POST["endpoint"]}", Method::GET);

@@ -11,6 +11,11 @@
     require_once Path::reflect("src/database/Auth.php");
 
     class GET_ReflectEndpoint extends AuthDB implements Endpoint {
+        private const COLUMNS = [
+            "endpoint",
+            "active"
+        ];
+
         public function __construct() {
             Rules::GET([
                 "id" => [
@@ -26,16 +31,14 @@
         public function main(): Response {
             // Check if endpoint exists by name
             if (!empty($_GET["id"])) {
-                $sql = "SELECT endpoint, active FROM api_endpoints WHERE endpoint = ?";
-                $res = $this->return_array($sql, $_GET["id"]);
+                $endpoint = $this->get("api_endpoints", self::COLUMNS, ["endpoint" => $_GET["id"]], 1);
 
-                return !empty($res) 
-                    ? new Response($res[0])
+                return !empty($endpoint) 
+                    ? new Response($endpoint)
                     : new Response(["No endpoint", "No endpoint found with name '{$_GET["id"]}'"], 404);
             }
 
             // Return array of all active Reflect API users
-            $sql = "SELECT endpoint, active FROM api_endpoints";
-            return new Response($this->return_array($sql));
+            return new Response($this->get("api_endpoints", self::COLUMNS));
         }
     }

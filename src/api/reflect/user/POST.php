@@ -34,8 +34,7 @@
             }
 
             // Attempt to add user as uppercase letters
-            $sql = "INSERT INTO api_users (id, active, created) VALUES (?, ?, ?)";
-            $this->return_bool($sql, [
+            $this->insert("api_users", [
                 strtoupper($_POST["id"]),
                 true,
                 time()

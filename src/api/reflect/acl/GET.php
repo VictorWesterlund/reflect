@@ -12,7 +12,7 @@
     require_once Path::reflect("src/database/Auth.php");
 
     class GET_ReflectAcl extends AuthDB implements Endpoint {
-        const GET = [
+        private const GET = [
             "endpoint" => [
                 "required" => false,
                 "type"     => "text",
@@ -31,46 +31,48 @@
             ]
         ];
 
+        // Return these columns from the ACL table
+        private const COLUMNS = [
+            "api_key",
+            "endpoint",
+            "method",
+            "created"
+        ];
+
         public function __construct() {
             Rules::GET(self::GET);
 
             parent::__construct(Connection::INTERNAL);
         }
 
-        // Return array of truthy search params
-        private function filter(): array {
-            $filters = [];
+        // Get ACL rule from database by endpoint, method, and API key
+        private function get_rule(): array {
+            $filter = array_combine(array_keys(self::GET), [
+                $_GET["endpoint"],
+                $_GET["method"],
+                $_GET["api_key"]
+            ]);
 
-            // Add search param to $filters if search param with same key is not falsy
-            foreach (array_keys(self::GET) as $key) {
-                if (!empty($_GET[$key])) {
-                    $filters[] = $key;
-                }
-            }
-
-            return $filters;
+            return $this->get("api_acl", self::COLUMNS, $filter, 1);
         }
 
         public function main(): Response {
-            $filter = $this->filter();
+            // Make sure if search parameters are set, that they are all there
+            $args = array_filter(array_values($_GET));
+            if ($args && count($args) !== count(self::GET)) {
+                return new Response("Missing required GET parameters", 422);
+            }
 
-            // Return ACL details by search parameters
-            if (!empty($filter)) {
-                // Generate SELECT values for prepared statement
-                // TODO: This is dumb and should be handled by the database library!
-                $values = array_map(fn($v): string => "{$v} = ?", $filter);
-                $values = implode(" AND ", $values);
+            // Return specific ACL rule by search parameters
+            if ($args) {
+                $acl_rule = $this->get_rule();
 
-                $sql = "SELECT endpoint, method, api_key FROM api_acl WHERE {$values}";
-                $res = $this->return_array($sql, array_map(fn($k): string => $_GET[$k], $filter));
-
-                return !empty($res) 
-                    ? new Response($res[0])
+                return !empty($acl_rule) 
+                    ? new Response($acl_rule)
                     : new Response(["No record", "No ACL record found with parameters'"], 404);
             }
 
             // Return array of all active Reflect API users only if none of the search parameters have been set
-            $sql = "SELECT api_key, endpoint, method, created FROM api_acl ORDER BY created DESC";
-            return new Response($this->return_array($sql));
+            return new Response($this->get("api_acl", self::COLUMNS));
         }
     }

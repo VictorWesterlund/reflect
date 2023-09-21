@@ -4,30 +4,27 @@
 
     use \Reflect\ENV;
 
-    // Supported response MIME types
-    enum ContentType: string {
-        case JSON = "application/json";
-        case TEXT = "text/plain";
-    }
-
     // Create a new reponse that will automatically output to the correct, current, connection channel
     class Response {
+        private const DEFAULT_TYPE = "application/json";
+
         public int $ok;
         public int $code;
-        public ContentType $type;
+        public string $type;
 
         private mixed $output;
 
-        public function __construct(mixed $output, int $code = 200, ContentType $type = ContentType::JSON) {
-            $this->output = $output;
-            $this->type = $type;
+        public function __construct(mixed $output, int $code = 200, ?string $type = null) {
             $this->code = $code;
+            $this->output = $output;
+            // MIME Type of the response
+            $this->type = $type ? $type : self::DEFAULT_TYPE;
             
             // Similar to JavaScript's "Response.ok" for easy check if response is, well, OK.
             $this->ok = $code < 300 && $code >= 200;
 
             // Set Content-Type of response with MIME type from enum
-            header("Content-Type: {$type->value}");
+            header("Content-Type: {$this->type}");
 
             // Response is not an internal request (from Call()) so we need to trigger an output from here
             if (!ENV::isset("INTERNAL_STDOUT")) {
@@ -44,11 +41,9 @@
         // Echo the output
         private function stdout_http(): never {
             http_response_code($this->code);
-
-            match ($this->type) {
-                ContentType::JSON => exit(json_encode($this->output)),
-                ContentType::TEXT => exit($output)
-            };
+            
+            // JSON encode output unless a custom MIME type has been specified
+            exit($this->type === self::DEFAULT_TYPE ? json_encode($this->output) : $this->output);
         }
 
         // Pass output to socker handler

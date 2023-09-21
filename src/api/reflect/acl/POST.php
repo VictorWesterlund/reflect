@@ -65,15 +65,14 @@
                 return new Response("ACL rule already exists", 402);
             }
 
-            $sql = "INSERT INTO api_acl (id, api_key, endpoint, method, created) VALUES (?, ?, ?, ?, ?)";
-            $insert = $this->return_bool($sql, [
-                // Get hash of parameters as row id
+            $insert = $this->insert("api_acl", [
                 $this->generate_hash(),
                 $_POST["api_key"],
                 $_POST["endpoint"],
                 $_POST["method"]->value,
                 time()
             ]);
+
             return $insert
                 ? new Response("OK")
                 : new Response("Failed to create ACL rule");

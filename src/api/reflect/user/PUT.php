@@ -35,8 +35,7 @@
             $sql = "UPDATE api_users SET active = ? WHERE id = ?";
             
             // Update the endpoint
-            $updated = $this->return_bool($sql, [$_POST["active"], $_GET["id"]]);
-            return $updated
+            return $this->update("api_users", ["active" => $_POST["active"], [$_GET["id"]]])
                 ? new Response("OK")
                 : new Response(["Failed to update user", $updated], 500);
         }

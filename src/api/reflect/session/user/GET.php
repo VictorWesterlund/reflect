@@ -17,11 +17,10 @@
         // Return the API key used for the current request
         public function main(): Response {
             // Resolve user id from current key
-            $sql = "SELECT user FROM api_keys WHERE id = ?";
-            $res = $this->return_array($sql, $this->get_api_key());
+            $user = $this->get("api_keys", ["user"], ["id" => $this->get_api_key()], 1);
 
-            return !empty($res)
-                ? new Response($res[0]["user"])
+            return !empty($user)
+                ? new Response($user["user"])
                 /*
                     Current key is not in keys table.
                     This is probably a configuration error. The requester key had access in the ACL table to make the call, 
