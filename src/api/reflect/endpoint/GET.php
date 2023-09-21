@@ -31,7 +31,7 @@
         public function main(): Response {
             // Check if endpoint exists by name
             if (!empty($_GET["id"])) {
-                $endpoint = $this->get("api_endpoint", self::COLUMNS, ["endpoint" => $_GET["id"]], 1);
+                $endpoint = $this->get("api_endpoints", self::COLUMNS, ["endpoint" => $_GET["id"]], 1);
 
                 return !empty($endpoint) 
                     ? new Response($endpoint)

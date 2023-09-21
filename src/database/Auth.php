@@ -39,7 +39,11 @@
                 return true;
             }
 
-            return $this->get("api_users", null, ["active" => strtoupper($user)]);
+            // Return true if user exists and is active
+            return $this->get("api_users", null, [
+                "id"     => $user,
+                "active" => true
+            ]);
         }
 
         // Validate API key from GET parameter
@@ -103,10 +107,9 @@
                 return true;
             }
 
-            // Get API key from request
-            $key = $this->get_api_key();
+            // Prepare filter for ACL check
             $filter = [
-                "api_key"  => $key,
+                "api_key"  => $this->get_api_key(),
                 "endpoint" => $endpoint,
                 "method"   => $method->value
             ];
@@ -118,7 +121,7 @@
             if (empty($has_access)) {
                 $filter["api_key"] = $this->get_default_key();
                 
-                $has_access = $this->get("api_acl", $filter, 1);
+                $has_access = $this->get("api_acl", null, $filter, 1);
             }
 
             return !empty($has_access);
