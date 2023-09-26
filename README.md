@@ -122,3 +122,4 @@ Language|Install|Repository
 ---|---|---
 PHP|[reflect/client](https://packagist.org/packages/reflect/client) (Packagist)|[victorwesterlund/reflect-client-php](https://github.com/VictorWesterlund/reflect-client-php)
 Python|[reflect-client](https://pypi.org/project/reflect-client/) (PyPI)|[victorwesterlund/reflect-client-python](https://github.com/VictorWesterlund/reflect-client-python)
+JavaScript|[reflect-client](https://www.npmjs.com/package/reflect-client) (npm)|[victorwesterlund/reflect-client-js](https://github.com/VictorWesterlund/reflect-client-js)
