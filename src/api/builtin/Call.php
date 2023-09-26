@@ -23,9 +23,9 @@
         if (!($method instanceof Method)) {
             $method = is_string($method)
                 // Attempt to resolve method verb into enum
-                ? Method::try(strtoupper($method))
+                ? Method::from(strtoupper($method))
                 // Carry current method if not specified
-                : Method::try($_SERVER["REQUEST_METHOD"]);
+                : Method::from($_SERVER["REQUEST_METHOD"]);
         }
 
         $_SERVER["REQUEST_METHOD"] = $method->value; 
