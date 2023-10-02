@@ -87,7 +87,7 @@
         public function get_options(string $endpoint): array {
             $filter = [
                 "api_key"  => $this->get_api_key(),
-                "emdpoint" => $endpoint
+                "endpoint" => $endpoint
             ];
             
             // Flatten array to only values of "method"
