@@ -91,7 +91,7 @@
             ];
             
             // Flatten array to only values of "method"
-            $acl = $this->get("api_acl", ["method"], $filter, 1);
+            $acl = $this->get("api_acl", ["method"], $filter);
             return !empty($acl) ? array_column($acl, "method") : [];
         }
 
