@@ -9,8 +9,10 @@
     use \Reflect\Database\AuthDB;
     use \Reflect\Request\Connection;
 
-    require_once Path::reflect("src/request/Router.php");
+    use \Reflect\Database\Acl\Model;
+
     require_once Path::reflect("src/database/Auth.php");
+    require_once Path::reflect("src/database/model/Acl.php");
 
     class POST_ReflectAcl extends AuthDB implements Endpoint {
         public function __construct() {
@@ -65,16 +67,16 @@
                 return new Response("ACL rule already exists", 402);
             }
 
-            $insert = $this->insert("api_acl", [
-                $this->generate_hash(),
-                $_POST["api_key"],
-                $_POST["endpoint"],
-                $_POST["method"]->value,
-                time()
-            ]);
+            $insert = $this->for(Model::TABLE)
+                ->with(Model::values())
+                ->insert([
+                    $this->generate_hash(),
+                    $_POST["api_key"],
+                    $_POST["endpoint"],
+                    $_POST["method"]->value,
+                    time()
+                ]);
 
-            return $insert
-                ? new Response("OK")
-                : new Response("Failed to create ACL rule");
+            return $insert ? new Response("OK") : new Response("Failed to create ACL rule");
         }
     }

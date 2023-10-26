@@ -8,8 +8,10 @@
     use \Reflect\Database\AuthDB;
     use \Reflect\Request\Connection;
 
-    require_once Path::reflect("src/request/Router.php");
+    use \Reflect\Database\Users\Model;
+
     require_once Path::reflect("src/database/Auth.php");
+    require_once Path::reflect("src/database/model/Users.php");
 
     class PUT_ReflectUser extends AuthDB implements Endpoint {
         public function __construct() {
@@ -32,11 +34,16 @@
         }
 
         public function main(): Response {
-            $sql = "UPDATE api_users SET active = ? WHERE id = ?";
+            // Update user active state
+            $update = $this->for(Model::TABLE)
+                -with(Model::values())
+                -where([
+                    Model::ID->value => $_GET["id"]
+                ])
+                ->update([
+                    Model::ACTIVE => $_POST["active"]
+                ]);
             
-            // Update the endpoint
-            return $this->update("api_users", ["active" => $_POST["active"], [$_GET["id"]]])
-                ? new Response("OK")
-                : new Response(["Failed to update user", $updated], 500);
+            return $update ? new Response("OK") : new Response("Failed to update user", 500);
         }
     }

@@ -7,8 +7,10 @@
     use \Reflect\Database\AuthDB;
     use \Reflect\Request\Connection;
 
-    require_once Path::reflect("src/request/Router.php");
+    use \Reflect\Database\Endpoints\Model;
+
     require_once Path::reflect("src/database/Auth.php");
+    require_once Path::reflect("src/database/model/Endpoints.php");
 
     class GET_ReflectEndpoint extends AuthDB implements Endpoint {
         private const COLUMNS = [
@@ -31,7 +33,13 @@
         public function main(): Response {
             // Check if endpoint exists by name
             if (!empty($_GET["id"])) {
-                $endpoint = $this->get("api_endpoints", self::COLUMNS, ["endpoint" => $_GET["id"]], 1);
+                $endpoint = $this->for(Model::TABLE)
+                    ->with(Model::values())
+                    ->where([
+                        Model::ID->value => $_GET["id"]
+                    ])
+                    ->limit(1)
+                    ->select(Model::values());
 
                 return !empty($endpoint) 
                     ? new Response($endpoint)
@@ -39,6 +47,10 @@
             }
 
             // Return array of all active Reflect API users
-            return new Response($this->get("api_endpoints", self::COLUMNS));
+            return new Response(
+                $this->for(Model::TABLE)
+                    ->with(Model::values())
+                    ->select(Model::values())
+            );
         }
     }

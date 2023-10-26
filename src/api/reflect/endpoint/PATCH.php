@@ -1,13 +1,10 @@
 <?php
 
-    use \Reflect\Path;
     use \Reflect\Rules;
     use \Reflect\Endpoint;
     use \Reflect\Response;
     use function \Reflect\Call;
     use \Reflect\Request\Method;
-
-    require_once Path::reflect("src/request/Router.php");
 
     class PATCH_ReflectEndpoint implements Endpoint {
         public function __construct() {

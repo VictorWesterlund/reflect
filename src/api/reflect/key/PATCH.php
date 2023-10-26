@@ -1,13 +1,10 @@
 <?php
 
-    use \Reflect\Path;
     use \Reflect\Rules;
     use \Reflect\Endpoint;
     use \Reflect\Response;
     use function \Reflect\Call;
     use \Reflect\Request\Method;
-
-    require_once Path::reflect("src/request/Router.php");
 
     class PATCH_ReflectKey implements Endpoint {
         public function __construct() {
@@ -40,8 +37,10 @@
 
         public function main(): Response {
             $update = Call("reflect/key?id={$_GET["id"]}", Method::PUT, $_POST);
-            return $update->ok
-                ? new Response("OK")
-                : new Response(["Failed to update key", $update], 500);
+
+            // Get all values from $_POST that exist in self::POST
+            //$values = array_map(fn($k): mixed => is_null($_POST[$k]) ? $key->output()[$k] : $_POST[$k], array_keys(self::POST));
+
+            return $update->ok ? new Response("OK") : new Response("Failed to update key", 500);
         }
     }

@@ -9,8 +9,10 @@
     use \Reflect\Database\AuthDB;
     use \Reflect\Request\Connection;
 
-    require_once Path::reflect("src/request/Router.php");
+    use \Reflect\Database\Acl\Model;
+
     require_once Path::reflect("src/database/Auth.php");
+    require_once Path::reflect("src/database/model/Acl.php");
 
     class DELETE_ReflectAcl extends AuthDB implements Endpoint {
         public function __construct() {

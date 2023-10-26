@@ -9,8 +9,10 @@
     use \Reflect\Database\AuthDB;
     use \Reflect\Request\Connection;
 
-    require_once Path::reflect("src/request/Router.php");
+    use \Reflect\Database\Keys\Model;
+
     require_once Path::reflect("src/database/Auth.php");
+    require_once Path::reflect("src/database/model/Keys.php");
 
     class PUT_ReflectKey extends AuthDB implements Endpoint {
         private const POST = [
@@ -68,12 +70,13 @@
                 return new Response(["No user with id '{$_POST["user"]}' was found"], 404);
             }
 
-            // Get all values from $_POST that exist in self::POST
-            $values = array_map(fn($k): mixed => is_null($_POST[$k]) ? $key->output()[$k] : $_POST[$k], array_keys(self::POST));
+            $update = $this->for(Model::TABLE)
+                ->with(Model::values())
+                ->where([
+                    Model::ID->value => $_GET["id"]
+                ])
+                ->update(array_values($_POST));
 
-            // Execute query with SQL string and the array of values we prepared earlier
-            return $this->update("api_keys", $values, ["id" => $_GET["id"]])
-                ? new Response("OK")
-                : new Response("Failed to update key", 500);
+            return $update ? new Response("OK") : new Response("Failed to update key", 500);
         }
     }

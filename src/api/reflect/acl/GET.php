@@ -8,8 +8,10 @@
     use \Reflect\Database\AuthDB;
     use \Reflect\Request\Connection;
 
-    require_once Path::reflect("src/request/Router.php");
+    use \Reflect\Database\Acl\Model;
+
     require_once Path::reflect("src/database/Auth.php");
+    require_once Path::reflect("src/database/model/Acl.php");
 
     class GET_ReflectAcl extends AuthDB implements Endpoint {
         private const GET = [
@@ -53,7 +55,12 @@
                 $_GET["api_key"]
             ]);
 
-            return $this->get("api_acl", self::COLUMNS, $filter, 1);
+            // Get ACL rule from database
+            return $this->for(Model::TABLE)
+                ->with(Model::values())
+                ->where($filter)
+                ->limit(1)
+                ->select(Model::values());
         }
 
         public function main(): Response {
@@ -73,6 +80,10 @@
             }
 
             // Return array of all active Reflect API users only if none of the search parameters have been set
-            return new Response($this->get("api_acl", self::COLUMNS));
+            return new Response(
+                $this->for(Model::TABLE)
+                    ->with(Model::values())
+                    ->select(Model::values())
+            );
         }
     }

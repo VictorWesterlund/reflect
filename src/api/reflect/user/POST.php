@@ -9,8 +9,10 @@
     use \Reflect\Database\AuthDB;
     use \Reflect\Request\Connection;
 
-    require_once Path::reflect("src/request/Router.php");
+    use \Reflect\Database\Users\Model;
+
     require_once Path::reflect("src/database/Auth.php");
+    require_once Path::reflect("src/database/model/Users.php");
 
     class POST_ReflectUser extends AuthDB implements Endpoint {
         public function __construct() {
@@ -33,12 +35,14 @@
                 return new Response("User already exists", 409);
             }
 
-            // Attempt to add user as uppercase letters
-            $this->insert("api_users", [
-                strtoupper($_POST["id"]),
-                true,
-                time()
-            ]);
+            // Attempt to add user
+            $this->for(Model::TABLE)
+                ->with(Model::values())
+                ->insert([
+                    $_POST["id"],
+                    true,
+                    time()
+                ]);
 
             // Check if user got added sucessfully
             return Call("reflect/user?id={$_POST["id"]}", Method::GET)->ok

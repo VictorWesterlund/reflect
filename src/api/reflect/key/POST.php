@@ -9,7 +9,8 @@
     use \Reflect\Database\AuthDB;
     use \Reflect\Request\Connection;
 
-    require_once Path::reflect("src/request/Router.php");
+    use \Reflect\Database\Keys\Model;
+
     require_once Path::reflect("src/database/Auth.php");
 
     class POST_ReflectKey extends AuthDB implements Endpoint {
@@ -50,15 +51,17 @@
             $_POST["id"] = !empty($_POST["id"]) ? $_POST["id"] : $this->derive_key();
 
             // Attempt to insert key
-            $insert = $this->insert("api_keys", [
-                $_POST["id"],
-                // Set user id
-                $_POST["user"],
-                // Set expiry timestamp if defined
-                !empty($_POST["expires"]) ? $_POST["expires"] : null,
-                // Set created timestamp
-                time()
-            ]);
+            $insert = $this->for(Model::TABLE)
+                ->with(Model::values())
+                ->insert([
+                    $_POST["id"],
+                    // Set user id
+                    $_POST["user"],
+                    // Set expiry timestamp if defined
+                    !empty($_POST["expires"]) ? $_POST["expires"] : null,
+                    // Set created timestamp
+                    time()
+                ]);
 
             return !empty($insert) 
                 ? new Response($_POST["id"]) // Return API key

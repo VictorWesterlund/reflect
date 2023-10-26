@@ -9,8 +9,10 @@
     use \Reflect\Database\AuthDB;
     use \Reflect\Request\Connection;
 
-    require_once Path::reflect("src/request/Router.php");
+    use \Reflect\Database\Endpoints\Model;
+
     require_once Path::reflect("src/database/Auth.php");
+    require_once Path::reflect("src/database/model/Endpoints.php");
 
     class POST_ReflectEndpoint extends AuthDB implements Endpoint {
         public function __construct() {
@@ -32,7 +34,12 @@
 
         public function main(): Response {
             // Attempt to INSERT new endpoint
-            $this->insert("api_endpoints", [$_POST["endpoint"], 1]);
+            $this->for(Model::TABLE)
+                ->with(Model::values())
+                ->insert([
+                    $_POST["endpoint"],
+                    1
+                ]);
 
             // Ensure the endpoint was successfully created
             $created = Call("reflect/endpoint?id={$_POST["endpoint"]}", Method::GET);

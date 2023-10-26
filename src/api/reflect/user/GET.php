@@ -7,16 +7,12 @@
     use \Reflect\Database\AuthDB;
     use \Reflect\Request\Connection;
 
-    require_once Path::reflect("src/request/Router.php");
+    use \Reflect\Database\Users\Model;
+
     require_once Path::reflect("src/database/Auth.php");
+    require_once Path::reflect("src/database/model/Users.php");
 
     class GET_ReflectUser extends AuthDB implements Endpoint {
-        private const COLUMNS = [
-            "id",
-            "active",
-            "created"
-        ];
-
         public function __construct() {
             Rules::GET([
                 "id" => [
@@ -32,20 +28,31 @@
         public function main(): Response {
             // Filter only active users
             $filter = [
-                "active" => 1
+                Model::ACTIVE->value => 1
             ];
 
             // Return bool if user exists and is active by id
             if (!empty($_GET["id"])) {
-                $filter["id"] = $_GET["id"];
-                $key = $this->get("api_users", self::COLUMNS, $filter, 1);
+                $filter[Model::ID->value] = $_GET["id"];
 
-                return !empty($key) 
-                    ? new Response($key) 
+                // Get details for user by ID
+                $user = $this->for(Model::TABLE)
+                    ->with(Model::values())
+                    ->where($filter)
+                    ->limit(1)
+                    ->select(Model::values());
+
+                return !empty($user) 
+                    ? new Response($user) 
                     : new Response(["No user", "No user with id '{$_GET["id"]}' was found"], 404);
             }
 
             // Return array of all active users
-            return new Response($this->get("api_users", self::COLUMNS, $filter));
+            return new Response(
+                $this->for(Model::TABLE)
+                    ->with(Model::values())
+                    ->where($filter)
+                    ->select(Model::values())
+            );
         }
     }

@@ -1,6 +1,7 @@
 {
     "require": {
-        "victorwesterlund/libmysqldriver": "^2.0",
-        "victorwesterlund/libsqlitedriver": "^1.0"
+        "victorwesterlund/libmysqldriver": "^3.0",
+        "victorwesterlund/libsqlitedriver": "^1.0",
+        "victorwesterlund/xenum": "^1.1"
     }
 }

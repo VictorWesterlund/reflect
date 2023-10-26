@@ -7,18 +7,12 @@
     use \Reflect\Database\AuthDB;
     use \Reflect\Request\Connection;
 
-    require_once Path::reflect("src/request/Router.php");
+    use \Reflect\Database\Keys\Model;
+    
     require_once Path::reflect("src/database/Auth.php");
+    require_once Path::reflect("src/database/model/Keys.php");
 
     class GET_ReflectKey extends AuthDB implements Endpoint {
-        private const COLUMNS = [
-            "id",
-            "user",
-            "active",
-            "expires",
-            "created"
-        ];
-
         public function __construct() {
             Rules::GET([
                 "id" => [
@@ -34,13 +28,19 @@
         public function main(): Response {
             // Filter only active API keys
             $filter = [
-                "active" => 1
+                Model::ACTIVE->value => 1
             ];
 
             // Return bool if Reflect API key exists and is active by id
             if (!empty($_GET["id"])) {
-                $filter["id"] = $_GET["id"];
-                $key = $this->get("api_keys", self::COLUMNS, $filter, 1);
+                $filter[Model::ID->value] = $_GET["id"];
+
+                // Get key details by ID
+                $key = $this->for(Model::TABLE)
+                    ->with(Model::values())
+                    ->where($filter)
+                    ->limit(1)
+                    ->select(Model::values());
 
                 return !empty($key) 
                     ? new Response($key) 
@@ -48,6 +48,10 @@
             }
 
             // Return array of all active keys
-            return new Response($this->get("api_keys", self::COLUMNS, $filter));
+            return new Response(
+                $this->for(Model::TABLE)
+                    ->with(Model::values())
+                    ->select(Model::values())
+            );
         }
     }
