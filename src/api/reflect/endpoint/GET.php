@@ -4,15 +4,14 @@
     use \Reflect\Rules;
     use \Reflect\Endpoint;
     use \Reflect\Response;
-    use \Reflect\Database\AuthDB;
-    use \Reflect\Request\Connection;
 
+    use \Reflect\Database\Database;
     use \Reflect\Database\Endpoints\Model;
 
-    require_once Path::reflect("src/database/Auth.php");
+    require_once Path::reflect("src/database/Database.php");
     require_once Path::reflect("src/database/model/Endpoints.php");
 
-    class GET_ReflectEndpoint extends AuthDB implements Endpoint {
+    class GET_ReflectEndpoint extends Database implements Endpoint {
         private const COLUMNS = [
             "endpoint",
             "active"
@@ -27,7 +26,7 @@
                 ]
             ]);
             
-            parent::__construct(Connection::INTERNAL);
+            parent::__construct();
         }
 
         public function main(): Response {

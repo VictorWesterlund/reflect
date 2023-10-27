@@ -1,12 +1,19 @@
 <?php
 
+    use \Reflect\Path;
     use \Reflect\Rules;
     use \Reflect\Endpoint;
     use \Reflect\Response;
     use function \Reflect\Call;
     use \Reflect\Request\Method;
 
-    class PATCH_ReflectKey implements Endpoint {
+    use \Reflect\Database\Database;
+    use \Reflect\Database\Keys\Model;
+
+    require_once Path::reflect("src/database/Database.php");
+    require_once Path::reflect("src/database/model/Keys.php");
+
+    class PATCH_ReflectKey extends Database implements Endpoint {
         public function __construct() {
             Rules::GET([
                 "id" => [
@@ -33,14 +40,20 @@
                     "max"      => PHP_INT_MAX
                 ]
             ]);
+
+            parent::__construct();
         }
 
         public function main(): Response {
-            $update = Call("reflect/key?id={$_GET["id"]}", Method::PUT, $_POST);
+            $update = $this->for(Model::TABLE)
+                ->with(Model::values())
+                ->where([
+                    Model::ID->value       => $_GET["id"],
+                    Model::EXPIRES->values => time()
+                ])
+                ->update(self::filter_columns($_POST, Model::values()));
 
-            // Get all values from $_POST that exist in self::POST
-            //$values = array_map(fn($k): mixed => is_null($_POST[$k]) ? $key->output()[$k] : $_POST[$k], array_keys(self::POST));
-
-            return $update->ok ? new Response("OK") : new Response("Failed to update key", 500);
+            //$update = Call("reflect/key?id={$_GET["id"]}", Method::PUT, $_POST);
+            return $update ? new Response("OK") : new Response("Failed to update key", 500);
         }
     }

@@ -4,15 +4,14 @@
     use \Reflect\Rules;
     use \Reflect\Endpoint;
     use \Reflect\Response;
-    use \Reflect\Database\AuthDB;
-    use \Reflect\Request\Connection;
 
+    use \Reflect\Database\Database;
     use \Reflect\Database\Users\Model;
 
-    require_once Path::reflect("src/database/Auth.php");
+    require_once Path::reflect("src/database/Database.php");
     require_once Path::reflect("src/database/model/Users.php");
 
-    class GET_ReflectUser extends AuthDB implements Endpoint {
+    class GET_ReflectUser extends Database implements Endpoint {
         public function __construct() {
             Rules::GET([
                 "id" => [
@@ -22,7 +21,7 @@
                 ]
             ]);
             
-            parent::__construct(Connection::INTERNAL);
+            parent::__construct();
         }
 
         public function main(): Response {

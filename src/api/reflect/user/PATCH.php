@@ -1,6 +1,5 @@
 <?php
 
-    use \Reflect\Path;
     use \Reflect\Rules;
     use \Reflect\Endpoint;
     use \Reflect\Response;

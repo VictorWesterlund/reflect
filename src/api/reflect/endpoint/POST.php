@@ -6,15 +6,14 @@
     use \Reflect\Response;
     use function \Reflect\Call;
     use \Reflect\Request\Method;
-    use \Reflect\Database\AuthDB;
-    use \Reflect\Request\Connection;
 
+    use \Reflect\Database\Database;
     use \Reflect\Database\Endpoints\Model;
 
-    require_once Path::reflect("src/database/Auth.php");
+    require_once Path::reflect("src/database/Database.php");
     require_once Path::reflect("src/database/model/Endpoints.php");
 
-    class POST_ReflectEndpoint extends AuthDB implements Endpoint {
+    class POST_ReflectEndpoint extends Database implements Endpoint {
         public function __construct() {
             Rules::POST([
                 "endpoint" => [
@@ -29,7 +28,7 @@
                 ]
             ]);
             
-            parent::__construct(Connection::INTERNAL);
+            parent::__construct();
         }
 
         public function main(): Response {

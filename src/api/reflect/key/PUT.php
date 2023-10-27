@@ -6,15 +6,14 @@
     use \Reflect\Response;
     use function \Reflect\Call;
     use \Reflect\Request\Method;
-    use \Reflect\Database\AuthDB;
-    use \Reflect\Request\Connection;
 
+    use \Reflect\Database\Database;
     use \Reflect\Database\Keys\Model;
 
-    require_once Path::reflect("src/database/Auth.php");
+    require_once Path::reflect("src/database/Database.php");
     require_once Path::reflect("src/database/model/Keys.php");
 
-    class PUT_ReflectKey extends AuthDB implements Endpoint {
+    class PUT_ReflectKey extends Database implements Endpoint {
         private const POST = [
             "id"      => [
                 "required" => false,
@@ -48,7 +47,7 @@
 
             Rules::POST(self::POST);
 
-            parent::__construct(Connection::INTERNAL);
+            parent::__construct();
         }
 
         // Check if user exists or return true if no user change requested

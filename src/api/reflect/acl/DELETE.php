@@ -6,15 +6,13 @@
     use \Reflect\Response;
     use function \Reflect\Call;
     use \Reflect\Request\Method;
-    use \Reflect\Database\AuthDB;
-    use \Reflect\Request\Connection;
 
     use \Reflect\Database\Acl\Model;
 
-    require_once Path::reflect("src/database/Auth.php");
+    require_once Path::reflect("src/database/Database.php");
     require_once Path::reflect("src/database/model/Acl.php");
 
-    class DELETE_ReflectAcl extends AuthDB implements Endpoint {
+    class DELETE_ReflectAcl extends Database implements Endpoint {
         public function __construct() {
             Rules::GET([
                 "endpoint" => [
@@ -35,7 +33,7 @@
                 ]
             ]);
             
-            parent::__construct(Connection::INTERNAL);
+            parent::__construct();
         }
 
         public function main(): Response {

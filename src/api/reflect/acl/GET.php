@@ -5,15 +5,14 @@
     use \Reflect\Endpoint;
     use \Reflect\Response;
     use \Reflect\Request\Method;
-    use \Reflect\Database\AuthDB;
-    use \Reflect\Request\Connection;
 
+    use \Reflect\Database\Database;
     use \Reflect\Database\Acl\Model;
 
-    require_once Path::reflect("src/database/Auth.php");
+    require_once Path::reflect("src/database/Database.php");
     require_once Path::reflect("src/database/model/Acl.php");
 
-    class GET_ReflectAcl extends AuthDB implements Endpoint {
+    class GET_ReflectAcl extends Database implements Endpoint {
         private const GET = [
             "endpoint" => [
                 "required" => false,
@@ -32,19 +31,11 @@
                 "max"      => 128
             ]
         ];
-
-        // Return these columns from the ACL table
-        private const COLUMNS = [
-            "api_key",
-            "endpoint",
-            "method",
-            "created"
-        ];
-
+        
         public function __construct() {
             Rules::GET(self::GET);
 
-            parent::__construct(Connection::INTERNAL);
+            parent::__construct();
         }
 
         // Get ACL rule from database by endpoint, method, and API key

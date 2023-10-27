@@ -5,8 +5,6 @@
     use \Reflect\Endpoint;
     use \Reflect\Response;
     use \Reflect\Request\Method;
-    use \Reflect\Database\AuthDB;
-    use \Reflect\Request\Connection;
 
     use \Reflect\Database\Users\Model;
 
@@ -36,12 +34,12 @@
         public function main(): Response {
             // Update user active state
             $update = $this->for(Model::TABLE)
-                -with(Model::values())
-                -where([
+                ->with(Model::values())
+                ->where([
                     Model::ID->value => $_GET["id"]
                 ])
                 ->update([
-                    Model::ACTIVE => $_POST["active"]
+                    Model::ACTIVE->value => $_POST["active"]
                 ]);
             
             return $update ? new Response("OK") : new Response("Failed to update user", 500);

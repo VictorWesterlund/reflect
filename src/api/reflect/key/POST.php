@@ -6,14 +6,14 @@
     use \Reflect\Response;
     use function \Reflect\Call;
     use \Reflect\Request\Method;
-    use \Reflect\Database\AuthDB;
-    use \Reflect\Request\Connection;
 
+    use \Reflect\Database\Database;
     use \Reflect\Database\Keys\Model;
 
-    require_once Path::reflect("src/database/Auth.php");
+    require_once Path::reflect("src/database/Database.php");
+    require_once Path::reflect("src/database/model/Keys.php");
 
-    class POST_ReflectKey extends AuthDB implements Endpoint {
+    class POST_ReflectKey extends Database implements Endpoint {
         public function __construct() {
             Rules::POST([
                 "id"      => [
@@ -32,7 +32,7 @@
                 ]
             ]);
             
-            parent::__construct(Connection::INTERNAL);
+            parent::__construct();
         }
 
         // Derive key from a SHA256 hash of user id and current time if no custom key is provided

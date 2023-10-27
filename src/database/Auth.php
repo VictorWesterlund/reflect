@@ -7,30 +7,25 @@
     use \Reflect\Request\Connection;
     use \Reflect\Request\Method;
 
+    use \Reflect\Database\Database;
     use \Reflect\Database\Acl\Model as AclModel;
     use \Reflect\Database\Keys\Model as KeysModel;
     use \Reflect\Database\Users\Model as UsersModel;
     use \Reflect\Database\Endpoints\Model as EndpointsModel;
 
-    use \libmysqldriver\MySQL as MySQLDriver;
-
+    require_once Path::reflect("src/database/Database.php");
     require_once Path::reflect("src/database/model/Acl.php");
     require_once Path::reflect("src/database/model/Keys.php");
     require_once Path::reflect("src/database/model/Users.php");
     require_once Path::reflect("src/database/model/Endpoints.php");
 
-    class AuthDB extends MySQLDriver {
+    class AuthDB extends Database {
         public const DEFAULT_PUBLIC_API_KEY = "PUBLIC_API_KEY";
 
         private Connection $con;
 
         public function __construct(Connection $con) {
-            parent::__construct(
-                ENV::get("mysql_host"),
-                ENV::get("mysql_user"),
-                ENV::get("mysql_pass"),
-                ENV::get("mysql_db")
-            );
+            parent::__construct();
 
             $this->con = $con;
         }
