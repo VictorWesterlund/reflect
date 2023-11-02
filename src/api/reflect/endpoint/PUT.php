@@ -42,7 +42,7 @@
                     Model::ACTIVE->value => $_POST["active"]
                 ]);
             
-            // Update the endpoint
-            return $update ? new Response("OK") : new Response("Failed to update endpoint", 500);
+            // Return endpoint id if update was successful
+            return $update ? new Response($_GET["id"]) : new Response("Failed to update endpoint", 500);
         }
     }

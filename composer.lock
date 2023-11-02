@@ -8,16 +8,16 @@
     "packages": [
         {
             "name": "victorwesterlund/libmysqldriver",
-            "version": "3.0.0",
+            "version": "3.0.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/VictorWesterlund/php-libmysqldriver.git",
-                "reference": "84efec8938f1d88bafa3981714b46a0608b547a9"
+                "reference": "8ff61b727561a471705d5130f063e8f15cc8e589"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/VictorWesterlund/php-libmysqldriver/zipball/84efec8938f1d88bafa3981714b46a0608b547a9",
-                "reference": "84efec8938f1d88bafa3981714b46a0608b547a9",
+                "url": "https://api.github.com/repos/VictorWesterlund/php-libmysqldriver/zipball/8ff61b727561a471705d5130f063e8f15cc8e589",
+                "reference": "8ff61b727561a471705d5130f063e8f15cc8e589",
                 "shasum": ""
             },
             "type": "library",
@@ -39,9 +39,9 @@
             "description": "Abstraction library for common mysqli features",
             "support": {
                 "issues": "https://github.com/VictorWesterlund/php-libmysqldriver/issues",
-                "source": "https://github.com/VictorWesterlund/php-libmysqldriver/tree/3.0.0"
+                "source": "https://github.com/VictorWesterlund/php-libmysqldriver/tree/3.0.1"
             },
-            "time": "2023-10-26T13:00:04+00:00"
+            "time": "2023-10-31T14:38:33+00:00"
         },
         {
             "name": "victorwesterlund/libsqlitedriver",

@@ -76,6 +76,7 @@
                 ])
                 ->update(array_values($_POST));
 
-            return $update ? new Response("OK") : new Response("Failed to update key", 500);
+            // Return key id if update was successful
+            return $update ? new Response($_POST["id"]) : new Response("Failed to update key", 500);
         }
     }

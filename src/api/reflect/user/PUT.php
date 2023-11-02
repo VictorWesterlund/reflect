@@ -42,6 +42,7 @@
                     Model::ACTIVE->value => $_POST["active"]
                 ]);
             
-            return $update ? new Response("OK") : new Response("Failed to update user", 500);
+            // Return user id if update was successful
+            return $update ? new Response($_POST["id"]) : new Response("Failed to update user", 500);
         }
     }

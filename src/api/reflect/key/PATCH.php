@@ -48,12 +48,14 @@
             $update = $this->for(Model::TABLE)
                 ->with(Model::values())
                 ->where([
-                    Model::ID->value       => $_GET["id"],
-                    Model::EXPIRES->values => time()
+                    Model::ID->value      => $_GET["id"]
                 ])
                 ->update(self::filter_columns($_POST, Model::values()));
 
-            //$update = Call("reflect/key?id={$_GET["id"]}", Method::PUT, $_POST);
-            return $update ? new Response("OK") : new Response("Failed to update key", 500);
+            // Use new id from POST if changed, else use existing id
+            $id = $_POST["id"] ? $_POST["id"] : $_GET["id"];
+
+            // Return key if update was successful
+            return $update ? new Response($id) : new Response("Failed to update key", 500);
         }
     }
