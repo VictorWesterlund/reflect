@@ -83,10 +83,9 @@
             // Get column names from backed enum
             $col_id = KeysModel::ID->value;
             $col_active = KeysModel::ACTIVE->value;
-            $col_created = KeysModel::CREATED->value;
             $col_expires = KeysModel::EXPIRES->value;
 
-            $sql = "SELECT {$user} FROM {$table} WHERE {$col_id} = ? AND {$col_active} = 1 AND CURRENT_TIMESTAMP() BETWEEN {$col_created} AND COALESCE({$col_expires}, NOW())";
+            $sql = "SELECT {$user} FROM {$table} WHERE {$col_id} = ? AND {$col_active} = 1 AND (NOW() BETWEEN NOW() AND FROM_UNIXTIME(COALESCE({$col_expires}, UNIX_TIMESTAMP())))";
             $res = $this->exec($sql, $key);
             
             // Return key from request or default to anonymous key if it's invalid
