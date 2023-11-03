@@ -106,12 +106,16 @@
 
         // Return all available request methods to endpoint with key
         public function get_options(string $endpoint): array {
+            $api_key = $this->get_api_key();
+
             $acl = $this->for(AclModel::TABLE)
                 ->with(AclModel::values())
                 ->where([
-                    "api_key"  => $this->get_api_key(),
+                    "api_key"  => $api_key,
                     "endpoint" => $endpoint
                 ])
+                // TODO: libmysqldriver
+                ->limit(6)
                 ->select(["method"]);
             
             // Flatten array to only values of "method"
