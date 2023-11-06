@@ -57,11 +57,6 @@
 
         // Validate API key from GET parameter
         public function get_api_key(): string {
-            // Internal connections have no API key, so return empty string
-            if ($this->con === Connection::INTERNAL) {
-                return "";
-            }
-
             // No "key" parameter provided so use anonymous key
             if (empty($_SERVER["HTTP_AUTHORIZATION"])) {
                 // Mock Authorization header
