@@ -4,33 +4,23 @@
 
     use \Reflect\Path;
     use \Reflect\Response;
+
     use \Reflect\Database\AuthDB;
     use \Reflect\Database\IdempDB;
 
+    use \Reflect\Request\Method;
+    use \Reflect\Request\Connection;
+
     require_once Path::reflect("src/database/Auth.php");
     require_once Path::reflect("src/database/Idemp.php");
+
+    require_once Path::reflect("src/request/Method.php");
+    require_once Path::reflect("src/request/Connection.php");
 
     // These builtins should be exposed to endpoints in userspace
     require_once Path::reflect("src/api/builtin/Response.php");
     require_once Path::reflect("src/api/builtin/Rules.php");
     require_once Path::reflect("src/api/builtin/Call.php");
-
-    // Client/server connection medium
-    enum Connection {
-        case AF_UNIX;
-        case HTTP;
-        case INTERNAL;
-    }
-
-    // Allowed HTTP verbs
-    enum Method: string {
-        case GET     = "GET";
-        case POST    = "POST";
-        case PUT     = "PUT";
-        case DELETE  = "DELETE";
-        case PATCH   = "PATCH";
-        case OPTIONS = "OPTIONS";
-    }
 
     // This is the dynamic request router used to translate a RESTful request into a PHP class. It also checks each
     // request against AuthDB to make sure the provided key has access to the requested endpoint with method.
@@ -60,7 +50,12 @@
 
         // Polyfill for loading parameters from a JSON request body into $_POST
         private static function load_json_payload() {
-            return $_POST = json_decode(file_get_contents("php://input"), true) ?? [];
+            $decode = json_decode(file_get_contents("php://input"), true);
+            if (!empty($decode) && !is_array($decode)) {
+                return new Response("Failed to decode JSON request body", 422);
+            }
+
+            return $_POST = $decode ?? [];
         }
 
         // Get the requested endpoint from request URL
@@ -75,8 +70,11 @@
 
         // Turn "/path/to/endpoint" into "PathToEndpoint" which will be the name of the class to instantiate when called.
         private function get_endpoint_class(): string {
+            // Convert hyphens to slashes
+            $path = str_replace("-", "/", $this->endpoint);
+
             // Create crumbs from path
-            $path = explode("/", $this->endpoint);
+            $path = explode("/", $path);
 
             // Make each crumb lowercase so we can strip duplicates. That way we don't en up with silly class names like "OrderOrder" etc.
             $path = array_unique(array_map(fn($crumb) => strtolower($crumb), $path));

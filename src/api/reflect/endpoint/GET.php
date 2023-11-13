@@ -4,13 +4,14 @@
     use \Reflect\Rules;
     use \Reflect\Endpoint;
     use \Reflect\Response;
-    use \Reflect\Database\AuthDB;
-    use \Reflect\Request\Connection;
 
-    require_once Path::reflect("src/request/Router.php");
-    require_once Path::reflect("src/database/Auth.php");
+    use \Reflect\Database\Database;
+    use \Reflect\Database\Endpoints\Model;
 
-    class GET_ReflectEndpoint extends AuthDB implements Endpoint {
+    require_once Path::reflect("src/database/Database.php");
+    require_once Path::reflect("src/database/model/Endpoints.php");
+
+    class GET_ReflectEndpoint extends Database implements Endpoint {
         private const COLUMNS = [
             "endpoint",
             "active"
@@ -25,13 +26,19 @@
                 ]
             ]);
             
-            parent::__construct(Connection::INTERNAL);
+            parent::__construct();
         }
 
         public function main(): Response {
             // Check if endpoint exists by name
             if (!empty($_GET["id"])) {
-                $endpoint = $this->get("api_endpoints", self::COLUMNS, ["endpoint" => $_GET["id"]], 1);
+                $endpoint = $this->for(Model::TABLE)
+                    ->with(Model::values())
+                    ->where([
+                        Model::ID->value => $_GET["id"]
+                    ])
+                    ->limit(1)
+                    ->select(Model::values());
 
                 return !empty($endpoint) 
                     ? new Response($endpoint)
@@ -39,6 +46,10 @@
             }
 
             // Return array of all active Reflect API users
-            return new Response($this->get("api_endpoints", self::COLUMNS));
+            return new Response(
+                $this->for(Model::TABLE)
+                    ->with(Model::values())
+                    ->select(Model::values())
+            );
         }
     }

@@ -7,20 +7,25 @@
     use \Reflect\Request\Connection;
     use \Reflect\Request\Method;
 
-    use \libmysqldriver\MySQL as MySQLDriver;
+    use \Reflect\Database\Database;
+    use \Reflect\Database\Acl\Model as AclModel;
+    use \Reflect\Database\Keys\Model as KeysModel;
+    use \Reflect\Database\Users\Model as UsersModel;
+    use \Reflect\Database\Endpoints\Model as EndpointsModel;
 
-    class AuthDB extends MySQLDriver {
+    require_once Path::reflect("src/database/Database.php");
+    require_once Path::reflect("src/database/model/Acl.php");
+    require_once Path::reflect("src/database/model/Keys.php");
+    require_once Path::reflect("src/database/model/Users.php");
+    require_once Path::reflect("src/database/model/Endpoints.php");
+
+    class AuthDB extends Database {
         public const DEFAULT_PUBLIC_API_KEY = "PUBLIC_API_KEY";
 
         private Connection $con;
 
         public function __construct(Connection $con) {
-            parent::__construct(
-                ENV::get("mysql_host"),
-                ENV::get("mysql_user"),
-                ENV::get("mysql_pass"),
-                ENV::get("mysql_db")
-            );
+            parent::__construct();
 
             $this->con = $con;
         }
@@ -40,19 +45,18 @@
             }
 
             // Return true if user exists and is active
-            return $this->get("api_users", null, [
-                "id"     => $user,
-                "active" => true
-            ]);
+            return $this->for(UsersModel::TABLE)
+                ->with(UsersModel::values())
+                ->where([
+                    UsersModel::ID->value     => $user,
+                    UsersModel::ACTIVE->value => true
+                ])
+                ->limit(1)
+                ->select(null);
         }
 
         // Validate API key from GET parameter
         public function get_api_key(): string {
-            // Internal connections have no API key, so return empty string
-            if ($this->con === Connection::INTERNAL) {
-                return "";
-            }
-
             // No "key" parameter provided so use anonymous key
             if (empty($_SERVER["HTTP_AUTHORIZATION"])) {
                 // Mock Authorization header
@@ -68,7 +72,15 @@
             }
 
             // Check that key exists, is active, and not expired (now > created && now < expires)
-            $sql = "SELECT user FROM api_keys WHERE id = ? AND active = 1 AND CURRENT_TIMESTAMP() BETWEEN `created` AND COALESCE(`expires`, NOW())";
+            $user = KeysModel::USER->value;
+            $table = KeysModel::TABLE;
+
+            // Get column names from backed enum
+            $col_id = KeysModel::ID->value;
+            $col_active = KeysModel::ACTIVE->value;
+            $col_expires = KeysModel::EXPIRES->value;
+
+            $sql = "SELECT {$user} FROM {$table} WHERE {$col_id} = ? AND {$col_active} = 1 AND (NOW() BETWEEN NOW() AND FROM_UNIXTIME(COALESCE({$col_expires}, UNIX_TIMESTAMP())))";
             $res = $this->exec($sql, $key);
             
             // Return key from request or default to anonymous key if it's invalid
@@ -77,21 +89,31 @@
 
         // Return bool endpoint enabled
         public function endpoint_active(string $endpoint): bool {
-            return $this->get("api_endpoints", null, [
-                "endpoint" => $endpoint,
-                "active"   => 1
-            ], 1);
+            return $this->for(EndpointsModel::TABLE)
+                ->with(EndpointsModel::values())
+                ->where([
+                    "endpoint" => $endpoint,
+                    "active"   => 1
+                ])
+                ->limit(1)
+                ->select(null);
         }
 
         // Return all available request methods to endpoint with key
         public function get_options(string $endpoint): array {
-            $filter = [
-                "api_key"  => $this->get_api_key(),
-                "endpoint" => $endpoint
-            ];
+            $api_key = $this->get_api_key();
+
+            $acl = $this->for(AclModel::TABLE)
+                ->with(AclModel::values())
+                ->where([
+                    "api_key"  => $api_key,
+                    "endpoint" => $endpoint
+                ])
+                // TODO: libmysqldriver
+                ->limit(6)
+                ->select(["method"]);
             
             // Flatten array to only values of "method"
-            $acl = $this->get("api_acl", ["method"], $filter);
             return !empty($acl) ? array_column($acl, "method") : [];
         }
 
@@ -115,13 +137,21 @@
             ];
 
             // Check if the API key has access to the requested endpoint and method
-            $has_access = $this->get("api_acl", null, $filter, 1);
+            $has_access = $this->for(AclModel::TABLE)
+                ->with(AclModel::values())
+                ->where($filter)
+                ->limit(1)
+                ->select(null);
 
             // API key does not have access. So let's check again using the default public API key
             if (empty($has_access)) {
                 $filter["api_key"] = $this->get_default_key();
                 
-                $has_access = $this->get("api_acl", null, $filter, 1);
+                $has_access = $this->for(AclModel::TABLE)
+                    ->with(AclModel::values())
+                    ->where($filter)
+                    ->limit(1)
+                    ->select(null);
             }
 
             return !empty($has_access);

@@ -7,9 +7,13 @@
     use function \Reflect\Call;
     use \Reflect\Request\Method;
 
-    require_once Path::reflect("src/request/Router.php");
+    use \Reflect\Database\Database;
+    use \Reflect\Database\Keys\Model;
 
-    class PATCH_ReflectKey implements Endpoint {
+    require_once Path::reflect("src/database/Database.php");
+    require_once Path::reflect("src/database/model/Keys.php");
+
+    class PATCH_ReflectKey extends Database implements Endpoint {
         public function __construct() {
             Rules::GET([
                 "id" => [
@@ -36,12 +40,22 @@
                     "max"      => PHP_INT_MAX
                 ]
             ]);
+
+            parent::__construct();
         }
 
         public function main(): Response {
-            $update = Call("reflect/key?id={$_GET["id"]}", Method::PUT, $_POST);
-            return $update->ok
-                ? new Response("OK")
-                : new Response(["Failed to update key", $update], 500);
+            $update = $this->for(Model::TABLE)
+                ->with(Model::values())
+                ->where([
+                    Model::ID->value      => $_GET["id"]
+                ])
+                ->update(self::filter_columns($_POST, Model::values()));
+
+            // Use new id from POST if changed, else use existing id
+            $id = $_POST["id"] ? $_POST["id"] : $_GET["id"];
+
+            // Return key if update was successful
+            return $update ? new Response($id) : new Response("Failed to update key", 500);
         }
     }

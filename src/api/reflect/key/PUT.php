@@ -6,13 +6,14 @@
     use \Reflect\Response;
     use function \Reflect\Call;
     use \Reflect\Request\Method;
-    use \Reflect\Database\AuthDB;
-    use \Reflect\Request\Connection;
 
-    require_once Path::reflect("src/request/Router.php");
-    require_once Path::reflect("src/database/Auth.php");
+    use \Reflect\Database\Database;
+    use \Reflect\Database\Keys\Model;
 
-    class PUT_ReflectKey extends AuthDB implements Endpoint {
+    require_once Path::reflect("src/database/Database.php");
+    require_once Path::reflect("src/database/model/Keys.php");
+
+    class PUT_ReflectKey extends Database implements Endpoint {
         private const POST = [
             "id"      => [
                 "required" => false,
@@ -46,7 +47,7 @@
 
             Rules::POST(self::POST);
 
-            parent::__construct(Connection::INTERNAL);
+            parent::__construct();
         }
 
         // Check if user exists or return true if no user change requested
@@ -68,12 +69,14 @@
                 return new Response(["No user with id '{$_POST["user"]}' was found"], 404);
             }
 
-            // Get all values from $_POST that exist in self::POST
-            $values = array_map(fn($k): mixed => is_null($_POST[$k]) ? $key->output()[$k] : $_POST[$k], array_keys(self::POST));
+            $update = $this->for(Model::TABLE)
+                ->with(Model::values())
+                ->where([
+                    Model::ID->value => $_GET["id"]
+                ])
+                ->update(array_values($_POST));
 
-            // Execute query with SQL string and the array of values we prepared earlier
-            return $this->update("api_keys", $values, ["id" => $_GET["id"]])
-                ? new Response("OK")
-                : new Response("Failed to update key", 500);
+            // Return key id if update was successful
+            return $update ? new Response($_POST["id"]) : new Response("Failed to update key", 500);
         }
     }

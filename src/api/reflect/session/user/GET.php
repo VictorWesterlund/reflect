@@ -6,8 +6,10 @@
     use \Reflect\Database\AuthDB;
     use \Reflect\Request\Connection;
 
-    require_once Path::reflect("src/request/Router.php");
+    use \Reflect\Database\Keys\Model;
+
     require_once Path::reflect("src/database/Auth.php");
+    require_once Path::reflect("src/database/model/Keys.php");
 
     class GET_ReflectSessionUser extends AuthDB implements Endpoint {
         public function __construct() {
@@ -16,8 +18,15 @@
 
         // Return the API key used for the current request
         public function main(): Response {
-            // Resolve user id from current key
-            $user = $this->get("api_keys", ["user"], ["id" => $this->get_api_key()], 1);
+            // Get API key
+            $key = $this->get_api_key();
+            // Resolve user id from API key
+            $user = $this->for(Model::TABLE)
+                ->with(Model::values())
+                ->where([Model::ID->value => $key])
+                ->limit(1)
+                ->flatten()
+                ->select(Model::USER->value);
 
             return !empty($user)
                 ? new Response($user["user"])

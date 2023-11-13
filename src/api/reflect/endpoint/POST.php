@@ -6,13 +6,14 @@
     use \Reflect\Response;
     use function \Reflect\Call;
     use \Reflect\Request\Method;
-    use \Reflect\Database\AuthDB;
-    use \Reflect\Request\Connection;
 
-    require_once Path::reflect("src/request/Router.php");
-    require_once Path::reflect("src/database/Auth.php");
+    use \Reflect\Database\Database;
+    use \Reflect\Database\Endpoints\Model;
 
-    class POST_ReflectEndpoint extends AuthDB implements Endpoint {
+    require_once Path::reflect("src/database/Database.php");
+    require_once Path::reflect("src/database/model/Endpoints.php");
+
+    class POST_ReflectEndpoint extends Database implements Endpoint {
         public function __construct() {
             Rules::POST([
                 "endpoint" => [
@@ -27,12 +28,17 @@
                 ]
             ]);
             
-            parent::__construct(Connection::INTERNAL);
+            parent::__construct();
         }
 
         public function main(): Response {
             // Attempt to INSERT new endpoint
-            $this->insert("api_endpoints", [$_POST["endpoint"], 1]);
+            $this->for(Model::TABLE)
+                ->with(Model::values())
+                ->insert([
+                    $_POST["endpoint"],
+                    1
+                ]);
 
             // Ensure the endpoint was successfully created
             $created = Call("reflect/endpoint?id={$_POST["endpoint"]}", Method::GET);

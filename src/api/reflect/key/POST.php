@@ -6,13 +6,14 @@
     use \Reflect\Response;
     use function \Reflect\Call;
     use \Reflect\Request\Method;
-    use \Reflect\Database\AuthDB;
-    use \Reflect\Request\Connection;
 
-    require_once Path::reflect("src/request/Router.php");
-    require_once Path::reflect("src/database/Auth.php");
+    use \Reflect\Database\Database;
+    use \Reflect\Database\Keys\Model;
 
-    class POST_ReflectKey extends AuthDB implements Endpoint {
+    require_once Path::reflect("src/database/Database.php");
+    require_once Path::reflect("src/database/model/Keys.php");
+
+    class POST_ReflectKey extends Database implements Endpoint {
         public function __construct() {
             Rules::POST([
                 "id"      => [
@@ -31,7 +32,7 @@
                 ]
             ]);
             
-            parent::__construct(Connection::INTERNAL);
+            parent::__construct();
         }
 
         // Derive key from a SHA256 hash of user id and current time if no custom key is provided
@@ -50,15 +51,17 @@
             $_POST["id"] = !empty($_POST["id"]) ? $_POST["id"] : $this->derive_key();
 
             // Attempt to insert key
-            $insert = $this->insert("api_keys", [
-                $_POST["id"],
-                // Set user id
-                $_POST["user"],
-                // Set expiry timestamp if defined
-                !empty($_POST["expires"]) ? $_POST["expires"] : null,
-                // Set created timestamp
-                time()
-            ]);
+            $insert = $this->for(Model::TABLE)
+                ->with(Model::values())
+                ->insert([
+                    $_POST["id"],
+                    // Set user id
+                    $_POST["user"],
+                    // Set expiry timestamp if defined
+                    !empty($_POST["expires"]) ? $_POST["expires"] : null,
+                    // Set created timestamp
+                    time()
+                ]);
 
             return !empty($insert) 
                 ? new Response($_POST["id"]) // Return API key

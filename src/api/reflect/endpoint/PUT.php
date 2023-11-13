@@ -5,13 +5,14 @@
     use \Reflect\Endpoint;
     use \Reflect\Response;
     use \Reflect\Request\Method;
-    use \Reflect\Database\AuthDB;
-    use \Reflect\Request\Connection;
 
-    require_once Path::reflect("src/request/Router.php");
-    require_once Path::reflect("src/database/Auth.php");
+    use \Reflect\Database\Database;
+    use \Reflect\Database\Endpoints\Model;
 
-    class PUT_ReflectEndpoint extends AuthDB implements Endpoint {
+    require_once Path::reflect("src/database/Database.php");
+    require_once Path::reflect("src/database/model/Endpoints.php");
+
+    class PUT_ReflectEndpoint extends Database implements Endpoint {
         public function __construct() {
             Rules::GET([
                 "id" => [
@@ -28,16 +29,20 @@
                 ]
             ]);
 
-            parent::__construct(Connection::INTERNAL);
+            parent::__construct();
         }
 
         public function main(): Response {
-            $update = ["active"   => $_POST["active"]];
-            $filter = ["endpoint" => $_GET["id"]];
+            $update = $this->for(Model::TABLE)
+                ->with(Model::values())
+                ->where([
+                    Model::ID->value => $_GET["id"]
+                ])
+                ->update([
+                    Model::ACTIVE->value => $_POST["active"]
+                ]);
             
-            // Update the endpoint
-            return $this->update("api_endpoints", $update, $filter)
-                ? new Response("OK")
-                : new Response(["Failed to update endpoint", $updated], 500);
+            // Return endpoint id if update was successful
+            return $update ? new Response($_GET["id"]) : new Response("Failed to update endpoint", 500);
         }
     }

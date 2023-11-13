@@ -6,13 +6,14 @@
     use \Reflect\Response;
     use function \Reflect\Call;
     use \Reflect\Request\Method;
-    use \Reflect\Database\AuthDB;
-    use \Reflect\Request\Connection;
 
-    require_once Path::reflect("src/request/Router.php");
-    require_once Path::reflect("src/database/Auth.php");
+    use \Reflect\Database\Database;
+    use \Reflect\Database\Users\Model;
 
-    class POST_ReflectUser extends AuthDB implements Endpoint {
+    require_once Path::reflect("src/database/Database.php");
+    require_once Path::reflect("src/database/model/Users.php");
+
+    class POST_ReflectUser extends Database implements Endpoint {
         public function __construct() {
             Rules::POST([
                 "id" => [
@@ -23,7 +24,7 @@
                 ]
             ]);
             
-            parent::__construct(Connection::INTERNAL);
+            parent::__construct();
         }
 
         public function main(): Response {
@@ -33,12 +34,14 @@
                 return new Response("User already exists", 409);
             }
 
-            // Attempt to add user as uppercase letters
-            $this->insert("api_users", [
-                strtoupper($_POST["id"]),
-                true,
-                time()
-            ]);
+            // Attempt to add user
+            $this->for(Model::TABLE)
+                ->with(Model::values())
+                ->insert([
+                    $_POST["id"],
+                    true,
+                    time()
+                ]);
 
             // Check if user got added sucessfully
             return Call("reflect/user?id={$_POST["id"]}", Method::GET)->ok

@@ -5,13 +5,14 @@
     use \Reflect\Endpoint;
     use \Reflect\Response;
     use \Reflect\Request\Method;
-    use \Reflect\Database\AuthDB;
-    use \Reflect\Request\Connection;
 
-    require_once Path::reflect("src/request/Router.php");
-    require_once Path::reflect("src/database/Auth.php");
+    use \Reflect\Database\Database;
+    use \Reflect\Database\Acl\Model;
 
-    class GET_ReflectAcl extends AuthDB implements Endpoint {
+    require_once Path::reflect("src/database/Database.php");
+    require_once Path::reflect("src/database/model/Acl.php");
+
+    class GET_ReflectAcl extends Database implements Endpoint {
         private const GET = [
             "endpoint" => [
                 "required" => false,
@@ -30,19 +31,11 @@
                 "max"      => 128
             ]
         ];
-
-        // Return these columns from the ACL table
-        private const COLUMNS = [
-            "api_key",
-            "endpoint",
-            "method",
-            "created"
-        ];
-
+        
         public function __construct() {
             Rules::GET(self::GET);
 
-            parent::__construct(Connection::INTERNAL);
+            parent::__construct();
         }
 
         // Get ACL rule from database by endpoint, method, and API key
@@ -53,7 +46,12 @@
                 $_GET["api_key"]
             ]);
 
-            return $this->get("api_acl", self::COLUMNS, $filter, 1);
+            // Get ACL rule from database
+            return $this->for(Model::TABLE)
+                ->with(Model::values())
+                ->where($filter)
+                ->limit(1)
+                ->select(Model::values());
         }
 
         public function main(): Response {
@@ -73,6 +71,10 @@
             }
 
             // Return array of all active Reflect API users only if none of the search parameters have been set
-            return new Response($this->get("api_acl", self::COLUMNS));
+            return new Response(
+                $this->for(Model::TABLE)
+                    ->with(Model::values())
+                    ->select(Model::values())
+            );
         }
     }

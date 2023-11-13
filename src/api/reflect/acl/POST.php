@@ -6,13 +6,14 @@
     use \Reflect\Response;
     use function \Reflect\Call;
     use \Reflect\Request\Method;
-    use \Reflect\Database\AuthDB;
-    use \Reflect\Request\Connection;
 
-    require_once Path::reflect("src/request/Router.php");
-    require_once Path::reflect("src/database/Auth.php");
+    use \Reflect\Database\Database;
+    use \Reflect\Database\Acl\Model;
 
-    class POST_ReflectAcl extends AuthDB implements Endpoint {
+    require_once Path::reflect("src/database/Database.php");
+    require_once Path::reflect("src/database/model/Acl.php");
+
+    class POST_ReflectAcl extends Database implements Endpoint {
         public function __construct() {
             Rules::POST([
                 "api_key"  => [
@@ -29,7 +30,7 @@
                 ]
             ]);
             
-            parent::__construct(Connection::INTERNAL);
+            parent::__construct();
         }
 
         // Generate hash of ACL parameters.
@@ -65,16 +66,16 @@
                 return new Response("ACL rule already exists", 402);
             }
 
-            $insert = $this->insert("api_acl", [
-                $this->generate_hash(),
-                $_POST["api_key"],
-                $_POST["endpoint"],
-                $_POST["method"]->value,
-                time()
-            ]);
+            $insert = $this->for(Model::TABLE)
+                ->with(Model::values())
+                ->insert([
+                    $this->generate_hash(),
+                    $_POST["api_key"],
+                    $_POST["endpoint"],
+                    $_POST["method"]->value,
+                    time()
+                ]);
 
-            return $insert
-                ? new Response("OK")
-                : new Response("Failed to create ACL rule");
+            return $insert ? new Response("OK") : new Response("Failed to create ACL rule");
         }
     }
