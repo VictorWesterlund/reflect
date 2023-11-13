@@ -70,8 +70,11 @@
 
         // Turn "/path/to/endpoint" into "PathToEndpoint" which will be the name of the class to instantiate when called.
         private function get_endpoint_class(): string {
+            // Convert hyphens to slashes
+            $path = str_replace("-", "/", $this->endpoint);
+
             // Create crumbs from path
-            $path = explode("/", $this->endpoint);
+            $path = explode("/", $path);
 
             // Make each crumb lowercase so we can strip duplicates. That way we don't en up with silly class names like "OrderOrder" etc.
             $path = array_unique(array_map(fn($crumb) => strtolower($crumb), $path));
