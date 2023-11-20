@@ -1,26 +1,31 @@
 <?php
 
-    use \Reflect\Rules;
     use \Reflect\Endpoint;
     use \Reflect\Response;
     use function \Reflect\Call;
     use \Reflect\Request\Method;
 
+    use \ReflectRules\Type;
+    use \ReflectRules\Rules;
+    use \ReflectRules\Ruleset;
+
     class PATCH_ReflectUser implements Endpoint {
+        private Ruleset $rules;
+
         public function __construct() {
-            Rules::GET([
-                "id" => [
-                    "required" => true,
-                    "min"      => 1,
-                    "max"      => 128
-                ]
+            $this->rules = new Ruleset();
+
+            $this->rules->GET([
+                (new Rules("id"))
+                    ->required()
+                    ->type(Type::STRING)
+                    ->max(128)
             ]);
 
-            Rules::POST([
-                "active"   => [
-                    "required" => true,
-                    "type"     => "bool"
-                ]
+            $this->rules->POST([
+                (new Rules("active"))
+                    ->required()
+                    ->type(Type::BOOLEAN)
             ]);
         }
 

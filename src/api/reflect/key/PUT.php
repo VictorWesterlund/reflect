@@ -1,11 +1,14 @@
 <?php
 
     use \Reflect\Path;
-    use \Reflect\Rules;
     use \Reflect\Endpoint;
     use \Reflect\Response;
     use function \Reflect\Call;
     use \Reflect\Request\Method;
+
+    use \ReflectRules\Type;
+    use \ReflectRules\Rules;
+    use \ReflectRules\Ruleset;
 
     use \Reflect\Database\Database;
     use \Reflect\Database\Keys\Model;
@@ -14,38 +17,36 @@
     require_once Path::reflect("src/database/model/Keys.php");
 
     class PUT_ReflectKey extends Database implements Endpoint {
-        private const POST = [
-            "id"      => [
-                "required" => false,
-                "type"     => "string",
-                "min"      => 1,
-                "max"      => 128
-            ],
-            "user"    => [
-                "required" => false,
-                "type"     => "string"
-            ],
-            "active"  => [
-                "required" => false,
-                "type"     => "boolean"
-            ],
-            "expires" => [
-                "required" => false,
-                "type"     => "int",
-                "max"      => PHP_INT_MAX
-            ]
-        ];
+        private Ruleset $rules;
 
         public function __construct() {
-            Rules::GET([
-                "id" => [
-                    "required" => true,
-                    "min"      => 1,
-                    "max"      => 128
-                ]
+            $this->rules = new Ruleset();
+
+            $this->rules->GET([
+                (new Rules("id"))
+                    ->required()
+                    ->max(255)
             ]);
 
-            Rules::POST(self::POST);
+            $this->rules->POST([
+                (new Rules("id"))
+                    ->required()
+                    ->type(Type::STRING),
+                
+                (new Rules("user"))
+                    ->required()
+                    ->type(Type::STRING)
+                    ->max(128),
+                
+                (new Rules("active"))
+                    ->required()
+                    ->type(Type::BOOLEAN),
+                
+                (new Rules("expires"))
+                    ->required()
+                    ->type(Type::NUMBER)
+                    ->max(PHP_INT_MAX)
+            ]);
 
             parent::__construct();
         }

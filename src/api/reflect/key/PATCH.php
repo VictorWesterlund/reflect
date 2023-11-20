@@ -1,11 +1,14 @@
 <?php
 
     use \Reflect\Path;
-    use \Reflect\Rules;
     use \Reflect\Endpoint;
     use \Reflect\Response;
     use function \Reflect\Call;
     use \Reflect\Request\Method;
+
+    use \ReflectRules\Type;
+    use \ReflectRules\Rules;
+    use \ReflectRules\Ruleset;
 
     use \Reflect\Database\Database;
     use \Reflect\Database\Keys\Model;
@@ -14,31 +17,26 @@
     require_once Path::reflect("src/database/model/Keys.php");
 
     class PATCH_ReflectKey extends Database implements Endpoint {
+        private Ruleset $rules;
+
         public function __construct() {
-            Rules::GET([
-                "id" => [
-                    "required" => true,
-                    "min"      => 1,
-                    "max"      => 128
-                ]
+            $this->rules = new Ruleset();
+
+            $this->rules->GET([
+                (new Rules("id"))
+                    ->required()
+                    ->type(Type::STRING)
+                    ->max(255)
             ]);
 
-            Rules::POST([
-                "id"      => [
-                    "required" => false,
-                    "type"     => "string",
-                    "min"      => 1,
-                    "max"      => 128
-                ],
-                "user"    => [
-                    "required" => false,
-                    "type"     => "string"
-                ],
-                "expires" => [
-                    "required" => false,
-                    "type"     => "int",
-                    "max"      => PHP_INT_MAX
-                ]
+            $this->rules->POST([
+                (new Rules("id"))
+                    ->type(Type::STRING)
+                    ->max(255),
+
+                (new Rules("user"))
+                    ->type(Type::STRING)
+                    ->max(128)
             ]);
 
             parent::__construct();
@@ -48,7 +46,7 @@
             $update = $this->for(Model::TABLE)
                 ->with(Model::values())
                 ->where([
-                    Model::ID->value      => $_GET["id"]
+                    Model::ID->value => $_GET["id"]
                 ])
                 ->update(self::filter_columns($_POST, Model::values()));
 
