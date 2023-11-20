@@ -1,11 +1,14 @@
 <?php
 
     use \Reflect\Path;
-    use \Reflect\Rules;
     use \Reflect\Endpoint;
     use \Reflect\Response;
     use function \Reflect\Call;
     use \Reflect\Request\Method;
+
+    use \ReflectRules\Type;
+    use \ReflectRules\Rules;
+    use \ReflectRules\Ruleset;
 
     use \Reflect\Database\Database;
     use \Reflect\Database\Endpoints\Model;
@@ -14,18 +17,20 @@
     require_once Path::reflect("src/database/model/Endpoints.php");
 
     class POST_ReflectEndpoint extends Database implements Endpoint {
+        private Ruleset $rules;
+
         public function __construct() {
-            Rules::POST([
-                "endpoint" => [
-                    "required" => true,
-                    "type"     => "text",
-                    "min"      => 1,
-                    "max"      => 128
-                ],
-                "active"   => [
-                    "required" => false,
-                    "type"     => "bool"
-                ]
+            $this->rules = new Ruleset();
+
+            $this->rules->POST([
+                (new Rules("endpoint"))
+                    ->required()
+                    ->type(Type::STRING)
+                    ->max(255),
+
+                (new Rules("active"))
+                    ->required()
+                    ->type(Type::BOOLEAN)
             ]);
             
             parent::__construct();

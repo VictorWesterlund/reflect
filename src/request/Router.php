@@ -19,7 +19,6 @@
 
     // These builtins should be exposed to endpoints in userspace
     require_once Path::reflect("src/api/builtin/Response.php");
-    require_once Path::reflect("src/api/builtin/Rules.php");
     require_once Path::reflect("src/api/builtin/Call.php");
 
     // This is the dynamic request router used to translate a RESTful request into a PHP class. It also checks each

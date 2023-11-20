@@ -1,24 +1,30 @@
 <?php
 
     use \Reflect\Path;
-    use \Reflect\Rules;
     use \Reflect\Endpoint;
     use \Reflect\Response;
     use function \Reflect\Call;
     use \Reflect\Request\Method;
+
+    use \ReflectRules\Type;
+    use \ReflectRules\Rules;
+    use \ReflectRules\Ruleset;
 
     use \Reflect\Database\Keys\Model;
 
     require_once Path::reflect("src/database/model/Keys.php");
 
     class DELETE_ReflectKey implements Endpoint {
+        private Ruleset $rules;
+
         public function __construct() {
-            Rules::GET([
-                "id" => [
-                    "required" => true,
-                    "min"      => 1,
-                    "max"      => 128
-                ]
+            $this->rules = new Ruleset();
+
+            $this->rules->GET([
+                (new Rules("id"))
+                    ->required()
+                    ->type(Type::STRING)
+                    ->max(128)
             ]);
         }
 

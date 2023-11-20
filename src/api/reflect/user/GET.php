@@ -1,9 +1,12 @@
 <?php
 
     use \Reflect\Path;
-    use \Reflect\Rules;
     use \Reflect\Endpoint;
     use \Reflect\Response;
+
+    use \ReflectRules\Type;
+    use \ReflectRules\Rules;
+    use \ReflectRules\Ruleset;
 
     use \Reflect\Database\Database;
     use \Reflect\Database\Users\Model;
@@ -12,13 +15,15 @@
     require_once Path::reflect("src/database/model/Users.php");
 
     class GET_ReflectUser extends Database implements Endpoint {
+        private Ruleset $rules;
+
         public function __construct() {
-            Rules::GET([
-                "id" => [
-                    "required" => false,
-                    "min"      => 1,
-                    "max"      => 128
-                ]
+            $this->rules = new Ruleset();
+
+            $this->rules->GET([
+                (new Rules("id"))
+                    ->type(Type::STRING)
+                    ->max(128)
             ]);
             
             parent::__construct();

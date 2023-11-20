@@ -26,6 +26,7 @@ use \Reflect\Endpoint;
 use \Reflect\Response;
 
 class GET_FooBar implements Endpoint {
+   private string $foo;
 
    public function __construct() {
       $this->foo = "bar";
@@ -38,7 +39,6 @@ class GET_FooBar implements Endpoint {
       
       return new Response("Foo is not a bar", 400);
    }
-   
 }
 ```
 *Reflect uses PHP's superglobals. $_GET for search parameters, $_POST for request body data (even JSON)*
@@ -48,38 +48,15 @@ class GET_FooBar implements Endpoint {
 // File: /endpoints/foo/bar/PUT.php
 
 use \Reflect\Path;
-use \Reflect\Rules;
 use \Reflect\Endpoint;
 use \Reflect\Response;
 use function \Reflect\Call;
 
-// Include other [relative] files (yes, even PHP scripts)
+// Include other PHP files relative to your Reflect .env.ini "endpoints"
 require_once Path::root("/MyDatabase.php");
 
 class POST_FooBar extends MyDatabase implements Endpoint {
-   
-   public function __construct() {
-      /*
-         The optional Rules class can be used to enforce rules on the request.
-         Rules::GET() for search parameters, and Rules::POST() for request body parameters
-         https://github.com/victorwesterlund/reflect/wiki/rules
-      */
-      Rules::GET([
-         "foo" => [
-            "required" => true,
-            "type"     => "string"
-         ]
-      ]);
-      
-      Rules::POST([
-         "example_uuid" => [
-            "required" => true,
-            "type"     => "string",
-            "min"      => 32,
-            "max"      => 32
-         ]
-      ]);
-      
+   public function __construct() {      
       parent::__construct("mydatabase");
    }
    
@@ -100,19 +77,25 @@ class POST_FooBar extends MyDatabase implements Endpoint {
          ? new Response("Nice!", 201)
          : new Response(["Oh no..", $example_insert_db], 500);
    }
-   
 }
 ```
 
-Check out the [Reflect wiki](https://github.com/VictorWesterlund/reflect/wiki) and the [Get Started guide](https://github.com/VictorWesterlund/reflect/wiki/Get-Started) for how to use this framework.
+## Request validation
+
+**The official [`Request validation plugin`](https://github.com/VictorWesterlund/reflect-rules-plugin) for Reflect lets your define constraints on GET and POST data.**
+
+> [!TIP]
+> Anything run from an Endpoint `__construct()` will be executed before `main()`. This is a good place to put your stand-alone or custom request validation.
 
 # Installation
 
 [See INSTALL.md for installation instructions](https://github.com/VictorWesterlund/reflect/blob/master/INSTALL.md)
 
-# Get started
+# Get started / Documentation
 
-Read the [Get started guide](https://github.com/VictorWesterlund/reflect/wiki/Get-Started) in the Wiki
+Read the [Get started guide](https://github.com/VictorWesterlund/reflect/wiki/Get-Started) in the Wiki.
+
+[Check out the Wiki](https://github.com/VictorWesterlund/reflect/wiki) here on GitHub for the full documentation.
 
 ## Client libraries
 

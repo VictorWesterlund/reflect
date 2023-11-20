@@ -1,11 +1,14 @@
 <?php
 
     use \Reflect\Path;
-    use \Reflect\Rules;
     use \Reflect\Endpoint;
     use \Reflect\Response;
     use function \Reflect\Call;
     use \Reflect\Request\Method;
+
+    use \ReflectRules\Type;
+    use \ReflectRules\Rules;
+    use \ReflectRules\Ruleset;
 
     use \Reflect\Database\Database;
     use \Reflect\Database\Acl\Model;
@@ -14,20 +17,25 @@
     require_once Path::reflect("src/database/model/Acl.php");
 
     class POST_ReflectAcl extends Database implements Endpoint {
+        private Ruleset $rules;
+
         public function __construct() {
-            Rules::POST([
-                "api_key"  => [
-                    "required" => true,
-                    "max"      => 32
-                ],
-                "endpoint" => [
-                    "required" => true,
-                    "max"      => 32
-                ],
-                "method"   => [
-                    "required" => true,
-                    "type"     => "text"
-                ]
+            $this->rules = new Ruleset();
+
+            $this->rules->POST([
+                (new Rules("api_key"))
+                    ->required()
+                    -type(Type::STRING)
+                    ->max(255),
+
+                (new Rules("endpoint"))
+                    ->required()
+                    -type(Type::STRING)
+                    ->max(255),
+
+                (new Rules("method"))
+                    ->required()
+                    -type(Type::STRING)
             ]);
             
             parent::__construct();

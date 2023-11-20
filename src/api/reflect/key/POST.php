@@ -1,11 +1,14 @@
 <?php
 
     use \Reflect\Path;
-    use \Reflect\Rules;
     use \Reflect\Endpoint;
     use \Reflect\Response;
     use function \Reflect\Call;
     use \Reflect\Request\Method;
+
+    use \ReflectRules\Type;
+    use \ReflectRules\Rules;
+    use \ReflectRules\Ruleset;
 
     use \Reflect\Database\Database;
     use \Reflect\Database\Keys\Model;
@@ -14,22 +17,25 @@
     require_once Path::reflect("src/database/model/Keys.php");
 
     class POST_ReflectKey extends Database implements Endpoint {
+        private Ruleset $rules;
+
         public function __construct() {
-            Rules::POST([
-                "id"      => [
-                    "required" => false,
-                    "type"     => "text",
-                    "min"      => 32,
-                    "max"      => 32
-                ],
-                "user"    => [
-                    "required" => true
-                ],
-                "expires" => [
-                    "required" => false,
-                    "type"     => "int",
-                    "max"      => PHP_INT_MAX
-                ]
+            $this->rules = new Ruleset();
+
+            $this->rules->POST([
+                (new Rules("id"))
+                    ->type(Type::STRING)
+                    ->min(32)
+                    ->max(32),
+
+                (new Rules("user"))
+                    ->required()
+                    ->type(Type::STRING)
+                    ->max(255),
+
+                (new Rules("expires"))
+                    ->type(Type::NUMBER)
+                    ->max(PHP_INT_MAX)
             ]);
             
             parent::__construct();

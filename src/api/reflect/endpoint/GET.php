@@ -1,9 +1,12 @@
 <?php
 
     use \Reflect\Path;
-    use \Reflect\Rules;
     use \Reflect\Endpoint;
     use \Reflect\Response;
+
+    use \ReflectRules\Type;
+    use \ReflectRules\Rules;
+    use \ReflectRules\Ruleset;
 
     use \Reflect\Database\Database;
     use \Reflect\Database\Endpoints\Model;
@@ -12,18 +15,15 @@
     require_once Path::reflect("src/database/model/Endpoints.php");
 
     class GET_ReflectEndpoint extends Database implements Endpoint {
-        private const COLUMNS = [
-            "endpoint",
-            "active"
-        ];
+        private Ruleset $rules;
 
         public function __construct() {
-            Rules::GET([
-                "id" => [
-                    "required" => false,
-                    "min"      => 1,
-                    "max"      => 128
-                ]
+            $this->rules = new Ruleset();
+
+            $this->rules->GET([
+                (new Rules("id"))
+                    ->type(Type::STRING)
+                    ->max(255)
             ]);
             
             parent::__construct();

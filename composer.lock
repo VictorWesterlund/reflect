@@ -4,8 +4,48 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "871157dfb99a0903d8dac8e1d7ce270a",
+    "content-hash": "cb1c14d96df2fb8f63e96519ca2ec241",
     "packages": [
+        {
+            "name": "reflect/plugin-rules",
+            "version": "1.0.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/VictorWesterlund/reflect-rules-plugin.git",
+                "reference": "d14d4bca6af3600e73fd9709a2aad4652dc0e553"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/VictorWesterlund/reflect-rules-plugin/zipball/d14d4bca6af3600e73fd9709a2aad4652dc0e553",
+                "reference": "d14d4bca6af3600e73fd9709a2aad4652dc0e553",
+                "shasum": ""
+            },
+            "require": {
+                "victorwesterlund/xenum": "^1.1"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "ReflectRules\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-3.0-only"
+            ],
+            "authors": [
+                {
+                    "name": "Victor Westerlund",
+                    "email": "victor.vesterlund@gmail.com"
+                }
+            ],
+            "description": "Add request search paramter and request body constraints to an API built with Reflect",
+            "support": {
+                "issues": "https://github.com/VictorWesterlund/reflect-rules-plugin/issues",
+                "source": "https://github.com/VictorWesterlund/reflect-rules-plugin/tree/1.0.2"
+            },
+            "time": "2023-11-20T10:31:26+00:00"
+        },
         {
             "name": "victorwesterlund/libmysqldriver",
             "version": "3.1.3",
