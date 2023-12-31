@@ -20,7 +20,7 @@
     require_once Path::reflect("src/database/model/Endpoints.php");
 
     class AuthDB extends Database {
-        public const DEFAULT_PUBLIC_API_KEY = "PUBLIC_API_KEY";
+        public const EMPTY_KEY = "NULL";
 
         private Connection $con;
 
@@ -30,15 +30,8 @@
             $this->con = $con;
         }
 
-        // Return the API key to use for public/anonymous requests
-        private function get_default_key(): string {
-            return ENV::get("public_api_key") ?? self::DEFAULT_PUBLIC_API_KEY;
-        }
-
-        /* ---- */
-
         // Return bool user id is enabled
-        public function user_active(string|null $user): bool {
+        private function user_active(string|null $user): bool {
             // Internal connections have no API key, so return true
             if ($this->con === Connection::INTERNAL) {
                 return true;
@@ -55,40 +48,30 @@
                 ->select(null);
         }
 
-        // Validate API key from GET parameter
-        public function get_api_key(): string {
-            // No "key" parameter provided so use anonymous key
-            if (empty($_SERVER["HTTP_AUTHORIZATION"])) {
-                // Mock Authorization header
-                $_SERVER["HTTP_AUTHORIZATION"] = "Bearer " . $this->get_default_key();
-            }
-
-            // Destruct Authorization header from <auth-scheme> <authorization-parameters>
-            [$scheme, $key] = explode(" ", $_SERVER["HTTP_AUTHORIZATION"], 2);
-
-            // Default to public key if invalid scheme or is HTTP request but passed an internal key
-            if ($scheme !== "Bearer") {
-                return $this->get_default_key();
-            }
-
-            // Check that key exists, is active, and not expired (now > created && now < expires)
-            $user = KeysModel::USER->value;
+        // Check if key and its user is active and not expired
+        private function key_active(string $key): bool {
             $table = KeysModel::TABLE;
 
-            // Get column names from backed enum
-            $col_id = KeysModel::ID->value;
-            $col_active = KeysModel::ACTIVE->value;
-            $col_expires = KeysModel::EXPIRES->value;
+            // Check that key exists, is active, and not expired (now > created && now < expires)
+            $user_column = KeysModel::USER->value;
 
-            $sql = "SELECT {$user} FROM {$table} WHERE {$col_id} = ? AND {$col_active} = 1 AND (NOW() BETWEEN NOW() AND FROM_UNIXTIME(COALESCE({$col_expires}, UNIX_TIMESTAMP())))";
+            // Get column names from backed enum
+            $key_id = KeysModel::ID->value;
+            $active = KeysModel::ACTIVE->value;
+            $expires = KeysModel::EXPIRES->value;
+
+            $sql = "SELECT {$user_column} FROM {$table} WHERE {$key_id} = ? AND {$active} = 1 AND (NOW() BETWEEN NOW() AND FROM_UNIXTIME(COALESCE({$expires}, UNIX_TIMESTAMP())))";
             $res = $this->exec($sql, $key);
-            
-            // Return key from request or default to anonymous key if it's invalid
-            return !empty($res) && $this->user_active($res[0]["user"]) ? $key : $this->get_default_key();
+
+            if (empty($res)) {
+                return false;
+            }
+
+            return $this->user_active($res[0][$user_column]);
         }
 
         // Return bool endpoint enabled
-        public function endpoint_active(string $endpoint): bool {
+        private function endpoint_active(string $endpoint): bool {
             return $this->for(EndpointsModel::TABLE)
                 ->with(EndpointsModel::values())
                 ->where([
@@ -97,6 +80,28 @@
                 ])
                 ->limit(1)
                 ->select(null);
+        }
+
+        // ----
+
+        // Validate API key from GET parameter
+        public function get_api_key(): ?string {
+            // No API key provided
+            if (empty($_SERVER["HTTP_AUTHORIZATION"])) {
+                // Mock Authorization header
+                $_SERVER["HTTP_AUTHORIZATION"] = "Bearer " . self::EMPTY_KEY;
+            }
+
+            // Destruct Authorization header from <auth-scheme> <authorization-parameters>
+            [$scheme, $key] = explode(" ", $_SERVER["HTTP_AUTHORIZATION"], 2);
+
+            // Invalid authorization scheme or empty key, treat request as public
+            if ($scheme !== "Bearer" || $key === self::EMPTY_KEY) {
+                return null;
+            }
+            
+            // Return API key if user is active. Else return null and treat the request as public
+            return $this->key_active($key) ? $key : null;
         }
 
         // Return all available request methods to endpoint with key
@@ -143,9 +148,9 @@
                 ->limit(1)
                 ->select(null);
 
-            // API key does not have access. So let's check again using the default public API key
+            // API key does not have access. So let's check again using null for public endpoints
             if (empty($has_access)) {
-                $filter["api_key"] = $this->get_default_key();
+                $filter["api_key"] = null;
                 
                 $has_access = $this->for(AclModel::TABLE)
                     ->with(AclModel::values())
