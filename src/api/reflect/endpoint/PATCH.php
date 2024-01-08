@@ -39,6 +39,11 @@
         }
 
         public function main(): Response {
+            // Request parameters are invalid, bail out here
+            if (!$this->rules->is_valid()) {
+                return new Response($this->rules->get_errors(), 422);    
+            }
+            
             // Alias for PUT
             return Call("reflect/endpoint?id={$_GET["id"]}", Method::PUT, $_POST);
         }

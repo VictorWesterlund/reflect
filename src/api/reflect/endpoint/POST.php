@@ -37,13 +37,22 @@
         }
 
         public function main(): Response {
-            // Attempt to INSERT new endpoint
-            $this->for(Model::TABLE)
-                ->with(Model::values())
-                ->insert([
-                    $_POST["endpoint"],
-                    1
-                ]);
+            // Request parameters are invalid, bail out here
+            if (!$this->rules->is_valid()) {
+                return new Response($this->rules->get_errors(), 422);    
+            }
+
+            // Attempt to add endpoint
+            try {
+                $insert = $this->for(Model::TABLE)
+                    ->with(Model::values())
+                    ->insert([
+                        $_POST["endpoint"],
+                        1
+                    ]);
+            } catch (\mysqli_sql_exception $error) {
+                return new Response("Failed to create endpoint", 500);
+            }
 
             // Ensure the endpoint was successfully created
             $created = Call("reflect/endpoint?id={$_POST["endpoint"]}", Method::GET);

@@ -47,6 +47,11 @@
         }
 
         public function main(): Response {
+            // Request parameters are invalid, bail out here
+            if (!$this->rules->is_valid()) {
+                return new Response($this->rules->get_errors(), 422);    
+            }
+
             // Check that the user exists and is active
             $user = Call("reflect/user?id={$_POST["user"]}", Method::GET);
             if (!$user->ok) {
@@ -56,21 +61,28 @@
             // Generate API key if not provided
             $_POST["id"] = !empty($_POST["id"]) ? $_POST["id"] : $this->derive_key();
 
-            // Attempt to insert key
-            $insert = $this->for(Model::TABLE)
-                ->with(Model::values())
-                ->insert([
-                    $_POST["id"],
-                    // Set user id
-                    $_POST["user"],
-                    // Set expiry timestamp if defined
-                    !empty($_POST["expires"]) ? $_POST["expires"] : null,
-                    // Set created timestamp
-                    time()
-                ]);
+            // Attempt to add key
+            try {
+                $insert = $this->for(Model::TABLE)
+                    ->with(Model::values())
+                    ->insert([
+                        $_POST["id"],
+                        // Set key as active
+                        true,
+                        // Set user id
+                        $_POST["user"],
+                        // Set expiry timestamp if defined
+                        !empty($_POST["expires"]) ? $_POST["expires"] : null,
+                        // Set created timestamp
+                        time()
+                    ]);
+            } catch (\mysqli_sql_exception $error) {
+                return new Response("Failed to add key", 500);
+            }
 
-            return !empty($insert) 
-                ? new Response($_POST["id"]) // Return API key
-                : new Response("Failed to create API key", 500);
+            // Check if key got added sucessfully
+            return Call("reflect/key?id={$_POST["id"]}", Method::GET)->ok
+                ? new Response("OK")
+                : new Response("Failed to add key", 500);
         }
     }

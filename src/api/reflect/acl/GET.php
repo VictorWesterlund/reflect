@@ -41,10 +41,19 @@
         }
 
         public function main(): Response {
-            return $this->for(Model::TABLE)
+            // Request parameters are invalid, bail out here
+            if (!$this->rules->is_valid()) {
+                return new Response($this->rules->get_errors(), 422);    
+            }
+
+            $acl = $this->for(Model::TABLE)
                 ->with(Model::values())
                 // Filter columns based on search parameters provided in request
                 ->where(self::filter_columns($_GET, Model::values()))
                 ->select(Model::values());
+
+            return $acl->num_rows > 0 
+                ? new Response($acl->fetch_all())
+                : new Response(["Access denied", "No ACL rules defined for the provided parameters"], 404);
         }
     }

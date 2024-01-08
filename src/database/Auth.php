@@ -45,7 +45,7 @@
                     UsersModel::ACTIVE->value => true
                 ])
                 ->limit(1)
-                ->select(null);
+                ->select(null)->num_rows === 1;
         }
 
         // Check if key and its user is active and not expired
@@ -60,14 +60,11 @@
             $active = KeysModel::ACTIVE->value;
             $expires = KeysModel::EXPIRES->value;
 
-            $sql = "SELECT {$user_column} FROM {$table} WHERE {$key_id} = ? AND {$active} = 1 AND (NOW() BETWEEN NOW() AND FROM_UNIXTIME(COALESCE({$expires}, UNIX_TIMESTAMP())))";
-            $res = $this->exec($sql, $key);
-
-            if (empty($res)) {
-                return false;
-            }
-
-            return $this->user_active($res[0][$user_column]);
+            $sql = "SELECT {$user} FROM {$table} WHERE {$col_id} = ? AND {$col_active} = 1 AND (NOW() BETWEEN NOW() AND FROM_UNIXTIME(COALESCE({$col_expires}, UNIX_TIMESTAMP())))";
+            $res = $this->exec($sql, $key)->fetch_assoc();
+            
+            // Return key from request or default to anonymous key if it's invalid
+            return !empty($res) && $this->user_active($res["user"]) ? $key : $this->get_default_key();
         }
 
         // Return bool endpoint enabled
@@ -79,7 +76,7 @@
                     "active"   => 1
                 ])
                 ->limit(1)
-                ->select(null);
+                ->select(null)->num_rows === 1;
         }
 
         // ----

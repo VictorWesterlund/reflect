@@ -33,6 +33,11 @@
         }
 
         public function main(): Response {
+            // Request parameters are invalid, bail out here
+            if (!$this->rules->is_valid()) {
+                return new Response($this->rules->get_errors(), 422);    
+            }
+
             // Check if user already exists
             $user = Call("reflect/user?id={$_POST["id"]}", Method::GET);
             if ($user->ok) {
@@ -40,13 +45,17 @@
             }
 
             // Attempt to add user
-            $this->for(Model::TABLE)
-                ->with(Model::values())
-                ->insert([
-                    $_POST["id"],
-                    true,
-                    time()
-                ]);
+            try {
+                $insert = $this->for(Model::TABLE)
+                    ->with(Model::values())
+                    ->insert([
+                        $_POST["id"],
+                        true,
+                        time()
+                    ]);
+            } catch (\mysqli_sql_exception $error) {
+                return new Response("Failed to add user", 500);
+            }
 
             // Check if user got added sucessfully
             return Call("reflect/user?id={$_POST["id"]}", Method::GET)->ok

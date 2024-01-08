@@ -59,6 +59,11 @@
         }
 
         public function main(): Response {
+            // Request parameters are invalid, bail out here
+            if (!$this->rules->is_valid()) {
+                return new Response($this->rules->get_errors(), 422);    
+            }
+            
             // Get existing key details
             $key = Call("reflect/key?id={$_GET["id"]}", Method::GET);
             if (!$key->ok) {
@@ -78,6 +83,6 @@
                 ->update(array_values($_POST));
 
             // Return key id if update was successful
-            return $update ? new Response($_POST["id"]) : new Response("Failed to update key", 500);
+            return $update && $this->affected_rows === 1 ? new Response($_POST["id"]) : new Response("Failed to update key", 500);
         }
     }
