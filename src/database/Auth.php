@@ -56,15 +56,15 @@
             $user_column = KeysModel::USER->value;
 
             // Get column names from backed enum
-            $key_id = KeysModel::ID->value;
+            $id = KeysModel::ID->value;
             $active = KeysModel::ACTIVE->value;
             $expires = KeysModel::EXPIRES->value;
 
-            $sql = "SELECT {$user} FROM {$table} WHERE {$col_id} = ? AND {$col_active} = 1 AND (NOW() BETWEEN NOW() AND FROM_UNIXTIME(COALESCE({$col_expires}, UNIX_TIMESTAMP())))";
-            $res = $this->exec($sql, $key)->fetch_assoc();
+            $sql = "SELECT {$user_column} FROM {$table} WHERE {$id} = ? AND {$active} = 1 AND (NOW() BETWEEN NOW() AND FROM_UNIXTIME(COALESCE({$expires}, UNIX_TIMESTAMP())))";
+            $res = $this->exec($sql, $key);
             
             // Return key from request or default to anonymous key if it's invalid
-            return !empty($res) && $this->user_active($res["user"]) ? $key : $this->get_default_key();
+            return $res->num_rows === 1 && $this->user_active($res->fetch_assoc()["user"]);
         }
 
         // Return bool endpoint enabled
@@ -146,7 +146,7 @@
                 ->select(null);
 
             // API key does not have access. So let's check again using null for public endpoints
-            if (empty($has_access)) {
+            if ($has_access->num_rows !== 1) {
                 $filter["api_key"] = null;
                 
                 $has_access = $this->for(AclModel::TABLE)
@@ -156,6 +156,6 @@
                     ->select(null);
             }
 
-            return !empty($has_access);
+            return $has_access->num_rows === 1;
         }
     }
