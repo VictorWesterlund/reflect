@@ -20,7 +20,7 @@ SET time_zone = "+00:00";
 
 CREATE TABLE `api_acl` (
   `id` varchar(32) NOT NULL,
-  `api_key` varchar(255) NOT NULL COMMENT 'foreign_key:api_keys.id',
+  `api_key` varchar(255) COMMENT 'foreign_key:api_keys.id',
   `endpoint` varchar(255) NOT NULL COMMENT 'foreign_key:api_endpoints.id',
   `method` enum('GET','POST','PUT','PATCH','DELETE') NOT NULL,
   `created` int(32) NOT NULL
