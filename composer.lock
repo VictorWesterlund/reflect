@@ -4,24 +4,21 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "cb1c14d96df2fb8f63e96519ca2ec241",
+    "content-hash": "76277c412f3f6f3636b4491c026b5b70",
     "packages": [
         {
             "name": "reflect/plugin-rules",
-            "version": "1.0.2",
+            "version": "1.4.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/VictorWesterlund/reflect-rules-plugin.git",
-                "reference": "d14d4bca6af3600e73fd9709a2aad4652dc0e553"
+                "reference": "5ea11cadf1acaa81c69a9241b616f301ad93e2eb"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/VictorWesterlund/reflect-rules-plugin/zipball/d14d4bca6af3600e73fd9709a2aad4652dc0e553",
-                "reference": "d14d4bca6af3600e73fd9709a2aad4652dc0e553",
+                "url": "https://api.github.com/repos/VictorWesterlund/reflect-rules-plugin/zipball/5ea11cadf1acaa81c69a9241b616f301ad93e2eb",
+                "reference": "5ea11cadf1acaa81c69a9241b616f301ad93e2eb",
                 "shasum": ""
-            },
-            "require": {
-                "victorwesterlund/xenum": "^1.1"
             },
             "type": "library",
             "autoload": {
@@ -42,22 +39,22 @@
             "description": "Add request search paramter and request body constraints to an API built with Reflect",
             "support": {
                 "issues": "https://github.com/VictorWesterlund/reflect-rules-plugin/issues",
-                "source": "https://github.com/VictorWesterlund/reflect-rules-plugin/tree/1.0.2"
+                "source": "https://github.com/VictorWesterlund/reflect-rules-plugin/tree/1.4.0"
             },
-            "time": "2023-11-20T10:31:26+00:00"
+            "time": "2024-01-06T13:24:16+00:00"
         },
         {
             "name": "victorwesterlund/libmysqldriver",
-            "version": "3.1.3",
+            "version": "3.2.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/VictorWesterlund/php-libmysqldriver.git",
-                "reference": "d9f450112ed393c122c92bac8462641f32406af1"
+                "reference": "4779b8b824ef1d8d10c4f560b118c3d8e16a3eea"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/VictorWesterlund/php-libmysqldriver/zipball/d9f450112ed393c122c92bac8462641f32406af1",
-                "reference": "d9f450112ed393c122c92bac8462641f32406af1",
+                "url": "https://api.github.com/repos/VictorWesterlund/php-libmysqldriver/zipball/4779b8b824ef1d8d10c4f560b118c3d8e16a3eea",
+                "reference": "4779b8b824ef1d8d10c4f560b118c3d8e16a3eea",
                 "shasum": ""
             },
             "type": "library",
@@ -79,9 +76,9 @@
             "description": "Abstraction library for common mysqli features",
             "support": {
                 "issues": "https://github.com/VictorWesterlund/php-libmysqldriver/issues",
-                "source": "https://github.com/VictorWesterlund/php-libmysqldriver/tree/3.1.3"
+                "source": "https://github.com/VictorWesterlund/php-libmysqldriver/tree/3.2.1"
             },
-            "time": "2023-11-03T12:40:54+00:00"
+            "time": "2024-01-08T13:30:51+00:00"
         },
         {
             "name": "victorwesterlund/libsqlitedriver",
@@ -122,16 +119,16 @@
         },
         {
             "name": "victorwesterlund/xenum",
-            "version": "1.1.0",
+            "version": "1.1.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/VictorWesterlund/php-xenum.git",
-                "reference": "99b784841ee5b69fdfcc4c466ef54f3af4ea4a85"
+                "reference": "8972f06f42abd1f382807a67e937d5564bb89699"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/VictorWesterlund/php-xenum/zipball/99b784841ee5b69fdfcc4c466ef54f3af4ea4a85",
-                "reference": "99b784841ee5b69fdfcc4c466ef54f3af4ea4a85",
+                "url": "https://api.github.com/repos/VictorWesterlund/php-xenum/zipball/8972f06f42abd1f382807a67e937d5564bb89699",
+                "reference": "8972f06f42abd1f382807a67e937d5564bb89699",
                 "shasum": ""
             },
             "type": "library",
@@ -153,9 +150,9 @@
             "description": "PHP eXtended Enums. The missing quality-of-life features from PHP 8+ Enums",
             "support": {
                 "issues": "https://github.com/VictorWesterlund/php-xenum/issues",
-                "source": "https://github.com/VictorWesterlund/php-xenum/tree/1.1.0"
+                "source": "https://github.com/VictorWesterlund/php-xenum/tree/1.1.1"
             },
-            "time": "2023-10-09T11:32:07+00:00"
+            "time": "2023-11-20T10:10:39+00:00"
         }
     ],
     "packages-dev": [],

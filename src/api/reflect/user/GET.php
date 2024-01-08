@@ -30,6 +30,11 @@
         }
 
         public function main(): Response {
+            // Request parameters are invalid, bail out here
+            if (!$this->rules->is_valid()) {
+                return new Response($this->rules->get_errors(), 422);    
+            }
+
             // Filter only active users
             $filter = [
                 Model::ACTIVE->value => 1
@@ -46,9 +51,12 @@
                     ->limit(1)
                     ->select(Model::values());
 
-                return !empty($user) 
-                    ? new Response($user) 
-                    : new Response(["No user", "No user with id '{$_GET["id"]}' was found"], 404);
+                // No user data found
+                if ($user->num_rows !== 1) {
+                    return new Response(["No user", "No user with id '{$_GET["id"]}' was found"], 404);
+                }
+
+                return new Response($user->fetch_assoc());
             }
 
             // Return array of all active users
@@ -56,7 +64,7 @@
                 $this->for(Model::TABLE)
                     ->with(Model::values())
                     ->where($filter)
-                    ->select(Model::values())
+                    ->select(Model::values())->fetch_all()
             );
         }
     }

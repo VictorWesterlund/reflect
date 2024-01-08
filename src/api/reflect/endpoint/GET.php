@@ -30,6 +30,11 @@
         }
 
         public function main(): Response {
+            // Request parameters are invalid, bail out here
+            if (!$this->rules->is_valid()) {
+                return new Response($this->rules->get_errors(), 422);    
+            }
+
             // Check if endpoint exists by name
             if (!empty($_GET["id"])) {
                 $endpoint = $this->for(Model::TABLE)
@@ -40,16 +45,18 @@
                     ->limit(1)
                     ->select(Model::values());
 
-                return !empty($endpoint) 
-                    ? new Response($endpoint)
-                    : new Response(["No endpoint", "No endpoint found with name '{$_GET["id"]}'"], 404);
+                if ($endpoint->num_rows !== 1) {
+                    return new Response(["No endpoint", "No endpoint found with name '{$_GET["id"]}'"], 404);
+                }
+
+                return new Response($endpoint->fetch_assoc());
             }
 
             // Return array of all active Reflect API users
             return new Response(
                 $this->for(Model::TABLE)
                     ->with(Model::values())
-                    ->select(Model::values())
+                    ->select(Model::values())->fetch_assoc()
             );
         }
     }

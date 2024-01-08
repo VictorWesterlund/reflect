@@ -38,6 +38,11 @@
         }
 
         public function main(): Response {
+            // Request parameters are invalid, bail out here
+            if (!$this->rules->is_valid()) {
+                return new Response($this->rules->get_errors(), 422);    
+            }
+            
             $update = $this->for(Model::TABLE)
                 ->with(Model::values())
                 ->where([
@@ -48,6 +53,6 @@
                 ]);
             
             // Return endpoint id if update was successful
-            return $update ? new Response($_GET["id"]) : new Response("Failed to update endpoint", 500);
+            return $update && $this->affected_rows === 1 ? new Response($_GET["id"]) : new Response("Failed to update endpoint", 500);
         }
     }

@@ -52,7 +52,7 @@
                     UsersModel::ACTIVE->value => true
                 ])
                 ->limit(1)
-                ->select(null);
+                ->select(null)->num_rows === 1;
         }
 
         // Validate API key from GET parameter
@@ -81,10 +81,10 @@
             $col_expires = KeysModel::EXPIRES->value;
 
             $sql = "SELECT {$user} FROM {$table} WHERE {$col_id} = ? AND {$col_active} = 1 AND (NOW() BETWEEN NOW() AND FROM_UNIXTIME(COALESCE({$col_expires}, UNIX_TIMESTAMP())))";
-            $res = $this->exec($sql, $key);
+            $res = $this->exec($sql, $key)->fetch_assoc();
             
             // Return key from request or default to anonymous key if it's invalid
-            return !empty($res) && $this->user_active($res[0]["user"]) ? $key : $this->get_default_key();
+            return !empty($res) && $this->user_active($res["user"]) ? $key : $this->get_default_key();
         }
 
         // Return bool endpoint enabled
@@ -96,7 +96,7 @@
                     "active"   => 1
                 ])
                 ->limit(1)
-                ->select(null);
+                ->select(null)->num_rows === 1;
         }
 
         // Return all available request methods to endpoint with key

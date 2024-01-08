@@ -41,6 +41,11 @@
         }
 
         public function main(): Response {
+            // Request parameters are invalid, bail out here
+            if (!$this->rules->is_valid()) {
+                return new Response($this->rules->get_errors(), 422);    
+            }
+            
             // Build qualified pathname and query from components
             $url = "reflect/acl?endpoint={$_GET["endpoint"]}&method={$_GET["method"]}&api_key={$_GET["api_key"]}";
 

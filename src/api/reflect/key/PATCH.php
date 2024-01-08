@@ -43,6 +43,11 @@
         }
 
         public function main(): Response {
+            // Request parameters are invalid, bail out here
+            if (!$this->rules->is_valid()) {
+                return new Response($this->rules->get_errors(), 422);    
+            }
+
             $update = $this->for(Model::TABLE)
                 ->with(Model::values())
                 ->where([
@@ -54,6 +59,6 @@
             $id = $_POST["id"] ? $_POST["id"] : $_GET["id"];
 
             // Return key if update was successful
-            return $update ? new Response($id) : new Response("Failed to update key", 500);
+            return $update && $this->affected_rows === 1 ? new Response($id) : new Response("Failed to update key", 500);
         }
     }

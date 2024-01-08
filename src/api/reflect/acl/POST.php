@@ -25,17 +25,17 @@
             $this->rules->POST([
                 (new Rules("api_key"))
                     ->required()
-                    -type(Type::STRING)
+                    ->type(Type::STRING)
                     ->max(255),
 
                 (new Rules("endpoint"))
                     ->required()
-                    -type(Type::STRING)
+                    ->type(Type::STRING)
                     ->max(255),
 
                 (new Rules("method"))
                     ->required()
-                    -type(Type::STRING)
+                    ->type(Type::STRING)
             ]);
             
             parent::__construct();
@@ -52,6 +52,11 @@
         }
 
         public function main(): Response {
+            // Request parameters are invalid, bail out here
+            if (!$this->rules->is_valid()) {
+                return new Response($this->rules->get_errors(), 422);    
+            }
+
             // Check endpoint is valid
             if (!Call("reflect/endpoint?id={$_POST["endpoint"]}", Method::GET)->ok) {
                 return new Response("No endpoint with id '{$_POST["endpoint"]}' was found", 404);
@@ -74,16 +79,28 @@
                 return new Response("ACL rule already exists", 402);
             }
 
-            $insert = $this->for(Model::TABLE)
-                ->with(Model::values())
-                ->insert([
-                    $this->generate_hash(),
-                    $_POST["api_key"],
-                    $_POST["endpoint"],
-                    $_POST["method"]->value,
-                    time()
-                ]);
+            // Attempt to add user
+            try {
+                $insert = $this->for(Model::TABLE)
+                    ->with(Model::values())
+                    ->insert([
+                        $this->generate_hash(),
+                        $_POST["api_key"],
+                        $_POST["endpoint"],
+                        $_POST["method"]->value,
+                        time()
+                    ]);
+            } catch (\mysqli_sql_exception $error) {
+                return new Response("Failed to create ACL rule", 500);
+            }
 
             return $insert ? new Response("OK") : new Response("Failed to create ACL rule");
+
+            $params = http_build_query($_POST);
+
+            // Check if ACL rules was added successfully
+            return Call("reflect/acl?endpoint={$_POST["endpoint"]}&api_key={$_POST["api_key"]}&method={$_POST["method"]->value}", Method::GET)->ok
+                ? new Response("OK")
+                : new Response("Failed to add user", 500);
         }
     }

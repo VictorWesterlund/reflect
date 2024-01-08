@@ -29,6 +29,11 @@
         }
 
         public function main(): Response {
+            // Request parameters are invalid, bail out here
+            if (!$this->rules->is_valid()) {
+                return new Response($this->rules->get_errors(), 422);    
+            }
+            
             // Soft-delete endpoint by setting active to false
             $delete = Call("reflect/endpoint?id={$_GET["id"]}", Method::PUT, [
                 Model::ACTIVE->value => false

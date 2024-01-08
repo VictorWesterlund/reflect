@@ -9,6 +9,8 @@
     use \ReflectRules\Rules;
     use \ReflectRules\Ruleset;
 
+    use \Reflect\Database\AuthDB;
+    use \Reflect\Request\Connection;
     use \Reflect\Database\Users\Model;
 
     require_once Path::reflect("src/database/Auth.php");
@@ -37,6 +39,11 @@
         }
 
         public function main(): Response {
+            // Request parameters are invalid, bail out here
+            if (!$this->rules->is_valid()) {
+                return new Response($this->rules->get_errors(), 422);    
+            }
+
             // Update user active state
             $update = $this->for(Model::TABLE)
                 ->with(Model::values())
@@ -48,6 +55,6 @@
                 ]);
             
             // Return user id if update was successful
-            return $update ? new Response($_POST["id"]) : new Response("Failed to update user", 500);
+            return $update && $this->affected_rows === 1 ? new Response($_GET["id"]) : new Response("Failed to update user", 500);
         }
     }
