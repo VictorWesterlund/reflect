@@ -25,16 +25,13 @@
                 ->with(Model::values())
                 ->where([Model::ID->value => $key])
                 ->limit(1)
-                ->flatten()
                 ->select(Model::USER->value);
 
-            return !empty($user)
-                ? new Response($user["user"])
-                /*
-                    Current key is not in keys table.
-                    This is probably a configuration error. The requester key had access in the ACL table to make the call, 
-                    but the corresponding key does not exist. Restore from backup and make sure that foregin key constraints are enabled.
-                */
-                : new Response(["Unknown user", "No user found for current API key"], 404);
+            // No user data found
+            if ($user->num_rows !== 1) {
+                return new Response(null, 404);
+            }
+
+            return new Response($user->fetch_assoc()["user"]);
         }
     }
