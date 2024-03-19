@@ -2,28 +2,25 @@
 
     namespace Reflect\Request;
 
-    use \Reflect\Path;
-    use \Reflect\Response;
+    use Reflect\ENV;
+    use Reflect\Path;
+    use Reflect\Method;
+    use Reflect\Response;
+    use Reflect\Database\Database;
+    use Reflect\Request\Connection;
 
-    use \Reflect\Database\AuthDB;
-    use \Reflect\Database\IdempDB;
-
-    use \Reflect\Request\Method;
-    use \Reflect\Request\Connection;
-
-    require_once Path::reflect("src/database/Auth.php");
-    require_once Path::reflect("src/database/Idemp.php");
-
-    require_once Path::reflect("src/request/Method.php");
+    require_once Path::reflect("src/database/Database.php");
     require_once Path::reflect("src/request/Connection.php");
-
+    
     // These builtins should be exposed to endpoints in userspace
     require_once Path::reflect("src/api/builtin/Response.php");
+    require_once Path::reflect("src/api/builtin/Endpoint.php");
+    require_once Path::reflect("src/api/builtin/Method.php");
     require_once Path::reflect("src/api/builtin/Call.php");
 
     // This is the dynamic request router used to translate a RESTful request into a PHP class. It also checks each
     // request against AuthDB to make sure the provided key has access to the requested endpoint with method.
-    class Router extends AuthDB {
+    class Router extends Database {
         private Method $method;
         private string $endpoint;
         private Connection|null $con;
@@ -59,10 +56,11 @@
 
         // Get the requested endpoint from request URL
         private static function get_endpoint(): string {
-            // Get only pathname component from request URI
-            $path = parse_url($_SERVER["REQUEST_URI"])["path"];
             // Strip leading slash
-            $path = ltrim($path, "/");
+            $path = ltrim($_SERVER["REQUEST_URI"], "/");
+
+            // Get only pathname component from request URI
+            $path = parse_url($path)["path"];
 
             return $path;
         }
@@ -87,11 +85,20 @@
 
         // Request URLs starting with "reflect/" are reserved and should read from the internal endpoints located at /src/api/
         private function get_endpoint_file_path(): string {
-            return substr($this->endpoint, 0, 8) !== "reflect/"
-                // User endpoints are kept in folders with 'index.php' as the file to run
-                ? Path::root("endpoints/{$this->endpoint}/{$this->method->value}.php")
-                // Internal endpoints are stored as named files
-                : Path::reflect("src/api/{$this->endpoint}/{$this->method->value}.php");
+            // Get internal request prefix string from environment variable
+            $internal_prefix = ENV::get(ENV::INTERNAL_REQUEST_PREFIX);
+
+            // Request is to an internal Reflect endpoint
+            if (substr($this->endpoint, 0, strlen($internal_prefix)) === $internal_prefix) {
+                return Path::reflect("src/api/{$this->endpoint}/{$this->method->value}.php");
+            }
+
+            // Return path to endpoint method file from user endpoints
+            return Path::root(implode("/", [
+                Path::ENDPOINTS_FOLDER,
+                $this->endpoint,
+                $this->method->value . ".php"
+            ]));
         }
 
         // Call an API endpoint by parsing a RESTful request, checking key permissions against AuthDB,
@@ -103,7 +110,7 @@
             $class = $this->get_endpoint_class();
 
             // Check that the endpoint exists and that the user is allowed to call it
-            if (!file_exists($file) || !$this->check($this->endpoint, $this->method)) {
+            if (!file_exists($file) || !$this->has_access($this->endpoint, $this->method)) {
                 return new Response(["No endpoint", "Endpoint not found or insufficient permissions for the requested method"], 404);
             }
 
