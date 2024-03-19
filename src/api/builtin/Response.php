@@ -2,9 +2,9 @@
 
     namespace Reflect;
 
-    use \Reflect\ENV;
+    use Reflect\ENV;
 
-    // Create a new reponse that will automatically output to the correct, current, connection channel
+    // Create a new Reponse that will automatically output to the current connection channel
     class Response {
         private const DEFAULT_TYPE = "application/json";
 
@@ -17,28 +17,26 @@
         public function __construct(mixed $output, int $code = 200, ?string $type = null) {
             $this->code = $code;
             $this->output = $output;
-            // MIME Type of the response
+
+            // Set MIME of the Response
             $this->type = $type ? $type : self::DEFAULT_TYPE;
             
-            // Similar to JavaScript's "Response.ok" for easy check if response is, well, OK.
+            // Response code is within HTTP Success range
             $this->ok = $code < 300 && $code >= 200;
 
             // Set Content-Type of response with MIME type from enum
             header("Content-Type: {$this->type}");
 
             // Response is not an internal request (from Call()) so we need to trigger an output from here
-            if (!ENV::isset("INTERNAL_STDOUT")) {
-                if (ENV::isset("SOCKET_STDOUT")) {
-                    $this->stdout_socket();
-                } else {
-                    $this->stdout_http();
-                }
-            } else {
-                $this->output();
-            }
+            ENV::isset(ENV::INTERNAL_STDOUT) ? $this->stdout_internal() : $this->stdout_http();
         }
 
-        // Echo the output
+        // Return output data directly. This method can be accessed from Reflect Call()
+        public function output(): mixed {
+            return $this->output;
+        }
+
+        // Write data to PHP's default standard output (HTTP response)
         private function stdout_http(): never {
             http_response_code($this->code);
             
@@ -46,13 +44,8 @@
             exit($this->type === self::DEFAULT_TYPE ? json_encode($this->output) : $this->output);
         }
 
-        // Pass output to socker handler
-        private function stdout_socket() {
-            return ENV::get("SOCKET_STDOUT")($this->output, $this->code);
-        }
-
-        // Get output for use with internal requests
-        public function output(): mixed {
-            return $this->output;
+        // Write data to Reflect Call() standard output
+        private function stdout_internal(): mixed {
+            return $this->output();
         }
     }

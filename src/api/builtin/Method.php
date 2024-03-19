@@ -1,6 +1,6 @@
 <?php
 
-	namespace Reflect\Request;
+	namespace Reflect;
 
 	// Allowed HTTP verbs
     enum Method: string {

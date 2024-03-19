@@ -2,15 +2,16 @@
 
     namespace Reflect;
 
-    use \Reflect\ENV;
-    use \Reflect\Path;
-    use \Reflect\Response;
-    use \Reflect\Request\Router;
-    use \Reflect\Request\Method;
-    use \Reflect\Request\Connection;
-    use \Reflect\Helpers\GlobalSnapshot;
+    use Reflect\ENV;
+    use Reflect\Path;
+    use Reflect\Method;
+    use Reflect\Response;
+    use Reflect\Request\Router;
+    use Reflect\Request\Connection;
+    use Reflect\Helpers\GlobalSnapshot;
 
     require_once Path::reflect("src/request/Router.php");
+    require_once Path::reflect("src/api/builtin/Method.php");
     require_once Path::reflect("src/api/builtin/Response.php");
     require_once Path::reflect("src/api/helpers/GlobalSnapshot.php");
 
@@ -56,7 +57,7 @@
         }
 
         // Set flag to let stdout() know that we wish to return instead of exit.
-        ENV::set("INTERNAL_STDOUT", true);
+        ENV::set(ENV::INTERNAL_STDOUT, true);
 
         // Start "proxied" Router (internal request)
         $resp = (new Router(Connection::INTERNAL))->main();

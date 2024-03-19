@@ -2,9 +2,8 @@
 
 	namespace Reflect\Request;
 
-	// Client/server connection medium
+	// Allowed connection media
 	enum Connection {
-		case AF_UNIX;
 		case HTTP;
 		case INTERNAL;
 	}
