@@ -46,6 +46,34 @@
             }
         }
 
+        // Returns true if the provided endpoint string is active
+        private function endpoint_active(string $endpoint): bool {
+            return $this->for(EndpointsModel::TABLE)
+                ->where([
+                    EndpointsModel::ID->value     => $endpoint,
+                    EndpointsModel::ACTIVE->value => 1
+                ])
+                ->limit(1)
+                ->select(null)->num_rows === 1;
+        }
+
+        // Return bool user id is enabled
+        private function user_active(string|null $user): bool {
+            // Internal connections have no API key, so return true
+            if ($this->con === Connection::INTERNAL) {
+                return true;
+            }
+
+            // Return true if user exists and is active
+            return $this->for(UsersModel::TABLE)
+                ->where([
+                    UsersModel::ID->value     => $user,
+                    UsersModel::ACTIVE->value => true
+                ])
+                ->limit(1)
+                ->select(null)->num_rows === 1;
+        }
+
         // Get key from Authorization header
         protected static function get_key_from_request(): ?string {
             // No API key provided
@@ -66,25 +94,8 @@
             return $key ? $key : null;
         }
 
-        // Return bool user id is enabled
-        private function user_active(string|null $user): bool {
-            // Internal connections have no API key, so return true
-            if ($this->con === Connection::INTERNAL) {
-                return true;
-            }
-
-            // Return true if user exists and is active
-            return $this->for(UsersModel::TABLE)
-                ->where([
-                    UsersModel::ID->value     => $user,
-                    UsersModel::ACTIVE->value => true
-                ])
-                ->limit(1)
-                ->select(null)->num_rows === 1;
-        }
-
         // Check if key and its user is active and not expired
-        private function get_user_id(): ?string {
+        protected function get_user_id(): ?string {
             // No key has been set
             if (!$this->api_key) {
                 return null;
@@ -116,7 +127,7 @@
         }
 
         // Return list of all group names associated with the current user
-        private function get_user_groups(): array {
+        protected function get_user_groups(): array {
             $resp = $this->for(RelUsersGroupsModel::TABLE)
                 ->where([
                     RelUsersGroupsModel::REF_USER->value => $this->user_id
@@ -125,17 +136,6 @@
 
             // Extract group ID from database response
             return array_column($resp->fetch_all(MYSQLI_ASSOC), RelUsersGroupsModel::REF_GROUP->value);
-        }
-
-        // Returns true if the provided endpoint string is active
-        private function endpoint_active(string $endpoint): bool {
-            return $this->for(EndpointsModel::TABLE)
-                ->where([
-                    EndpointsModel::ID->value     => $endpoint,
-                    EndpointsModel::ACTIVE->value => 1
-                ])
-                ->limit(1)
-                ->select(null)->num_rows === 1;
         }
 
         // Return all available request methods to endpoint with key
