@@ -14,6 +14,7 @@
     
     // These builtins should be exposed to endpoints in userspace
     require_once Path::reflect("src/api/builtin/Response.php");
+    require_once Path::reflect("src/api/builtin/Request.php");
     require_once Path::reflect("src/api/builtin/Endpoint.php");
     require_once Path::reflect("src/api/builtin/Method.php");
     require_once Path::reflect("src/api/builtin/Call.php");
