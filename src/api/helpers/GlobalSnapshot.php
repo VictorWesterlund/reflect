@@ -20,11 +20,7 @@
         private array $argv;
         private ?array $__composer_autoload_files;
 
-        public function __construct() {
-            foreach (array_keys($GLOBALS) as $global) {
-                $this->{$global} = $GLOBALS[$global];
-            }
-        }
+        public function __construct() {}
 
         // Clear a superglobal array
         private function truncate(string $global) {
@@ -39,6 +35,12 @@
 
                 $this->truncate($global);
                 $$global = $this->{$global};
+            }
+        }
+
+        public function capture() {
+            foreach (array_keys($GLOBALS) as $global) {
+                $this->{$global} = $GLOBALS[$global];
             }
         }
     }

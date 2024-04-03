@@ -1,70 +1,127 @@
 <?php
 
-    namespace Reflect;
+	namespace Reflect;
 
-    use Reflect\ENV;
-    use Reflect\Path;
-    use Reflect\Method;
-    use Reflect\Response;
-    use Reflect\Request\Router;
-    use Reflect\Request\Connection;
-    use Reflect\Helpers\GlobalSnapshot;
+	use Reflect\ENV;
+	use Reflect\Path;
+	use Reflect\Method;
+	use Reflect\Response;
+	use Reflect\Request\Router;
+	use Reflect\Request\Connection;
+	use Reflect\Helpers\GlobalSnapshot;
 
-    require_once Path::reflect("src/request/Router.php");
-    require_once Path::reflect("src/api/builtin/Method.php");
-    require_once Path::reflect("src/api/builtin/Response.php");
-    require_once Path::reflect("src/api/helpers/GlobalSnapshot.php");
+	require_once Path::reflect("src/request/Router.php");
+	require_once Path::reflect("src/api/builtin/Method.php");
+	require_once Path::reflect("src/api/builtin/Response.php");
+	require_once Path::reflect("src/api/helpers/GlobalSnapshot.php");
 
-    // Call another (internal) endpoint without performing a new HTTP request or socket txn
-    function Call(string $endpoint, string|Method $method = null, array $payload = null): Response {
-        // Capture a snapshot of the current superglobal state so when we can restore it before returning from this function.
-        $snapshot = new GlobalSnapshot();
+	class Call {
+		private Method $method;
+		private GlobalSnapshot $snapshot;
+		
+		protected string $endpoint;
+		protected array $params = [];
 
-        // Convert method from verb (or empty) into a Method enum
-        if (!($method instanceof Method)) {
-            $method = is_string($method)
-                // Attempt to resolve method verb into enum
-                ? Method::from(strtoupper($method))
-                // Carry current method if not specified
-                : Method::from($_SERVER["REQUEST_METHOD"]);
-        }
+		public function __construct(string $endpoint) {
+			$endpoint = explode("?", $endpoint, 2);
 
-        $_SERVER["REQUEST_METHOD"] = $method->value; 
+			// Set search parameters from endpoint string if provided
+			if (count($endpoint) == 2) {
+				// Spanws $params variable
+				parse_str($endpoint[1], $params);
 
-        // Split endpoint string into path and query
-        $endpoint = explode("?", $endpoint, 2);
-        // Set requested endpoint path with leading slash
-        $_SERVER["REQUEST_URI"] = "/" . $endpoint[0];
+				$this->params($params);
+			}
 
-        // Truncate GET superglobal and repopulate it with values from method call
-        $_GET = [];
-        if (count($endpoint) == 2) {
-            parse_str($endpoint[1], $params);
+			$this->endpoint = $endpoint[0];
+			// Remove leading slash if present
+			if (substr($this->endpoint, 0, 1) === "/") {
+				$this->endpoint = substr($this->endpoint, 1, strlen($this->endpoint) - 1);
+			}
 
-            foreach ($params as $key => $value) {
-                $_GET[$key] = $value;
-            }
-        }
+			$this->snapshot = new GlobalSnapshot();
+		}
 
-        // Truncate POST superglobal and repopulate it with values from method call
-        $_POST = [];
-        if (!empty($payload)) {
-            $_SERVER["HTTP_CONTENT_TYPE"] = "application/json";
-            
-            foreach ($payload as $key => $value) {
-                $_POST[$key] = $value;
-            }
-        }
+		// Truncate GET superglobal and repopulate it with search params
+		private function set_superglobal_params_proxy(): void {
+			$_GET = [];
 
-        // Set flag to let stdout() know that we wish to return instead of exit.
-        ENV::set(ENV::INTERNAL_STDOUT, true);
+			foreach ($this->params as $key => $value) {
+				$_GET[$key] = $value;
+			}
+		}
 
-        // Start "proxied" Router (internal request)
-        $resp = (new Router(Connection::INTERNAL))->main();
+		// Truncate POST superglobal and repopulate it with values from method call
+		private function set_superglobal_body_proxy(array $payload): void {
+			$_POST = [];
+				
+			foreach ($payload as $key => $value) {
+				$_POST[$key] = $value;
+			}
+		}
 
-        // Restore all superglobals. This will discard any modifications to superglobals prior to method call.
-        $snapshot->restore();
+		// Proxy new request and dispatch to Reflect request Router
+		private function dispatch(array $payload = []): Response {
+			// Cache all current superglobals
+			$this->snapshot->capture();
 
-        // Return \Reflect\Response object
-        return $resp;
-    }
+			// Set request method
+			$_SERVER["REQUEST_METHOD"] = $this->method->value; 
+			// Set requested endpoint path with leading slash
+			$_SERVER["REQUEST_URI"] = "/" . $this->endpoint;
+
+			$this->set_superglobal_params_proxy();
+			$this->set_superglobal_body_proxy($payload);
+
+			// Set Content-Type request header if a payload has been provided
+			if (!empty($payload)) {
+				$_SERVER["HTTP_CONTENT_TYPE"] = "application/json";
+			}
+
+			// Set flag to let stdout() know that we wish to return instead of exit.
+			ENV::set(ENV::INTERNAL_STDOUT, true);
+
+			// Start proxied request Router
+			$response = (new Router(Connection::INTERNAL))->main();
+
+			// Restore cached superglobals
+			$this->snapshot->restore();
+
+			return $response;
+		}
+
+		// ----
+
+		public function params(array $params = []): self {
+			$this->params = array_merge($this->params, $params);
+			return $this;
+		}
+
+		// ----
+
+		// Make a GET request to endpoint with optional search parameters
+		public function get(): Response {
+			$this->method = Method::GET;
+			return $this->dispatch();
+		}
+
+		public function patch(?array $payload = []): Response {
+			$this->method = Method::PATCH;
+			return $this->dispatch($payload);
+		}
+
+		public function put(?array $payload = []): Response {
+			$this->method = Method::PUT;
+			return $this->dispatch($payload);
+		}
+
+		public function post(?array $payload = []): Response {
+			$this->method = Method::POST;
+			return $this->dispatch($payload);
+		}
+
+		public function delete(?array $payload = []): Response {
+			$this->method = Method::DELETE;
+			return $this->dispatch($payload);
+		}
+	}
