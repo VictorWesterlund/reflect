@@ -112,7 +112,7 @@
 
             // Check that the endpoint exists and that the user is allowed to call it
             if (!file_exists($file) || !$this->has_access($this->endpoint, $this->method)) {
-                return new Response(["No endpoint", "Endpoint not found or insufficient permissions for the requested method"], 404);
+                return new Response(["Endpoint not found", "The requested API endpoint does not exist or you don't have the necessary permissions to access it"], 404);
             }
 
             // Import endpoint code if not already loaded
@@ -125,7 +125,7 @@
                     Eg. /foo/bar should have a class name FooBar inside a <METHOD>.php file
                 */
                 if (!class_exists($class)) {
-                    return new Response(["Internal Server Error", "Class anchor broken"], 500);
+                    return new Response(["Endpoint configuration error", "Expected endpoint class name '{$class}' not found"], 500);
                 }
             }
 
