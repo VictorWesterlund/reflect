@@ -48,8 +48,8 @@
         // Polyfill for loading parameters from a JSON request body into $_POST
         private static function load_json_payload() {
             $decode = json_decode(file_get_contents("php://input"), true);
-            if (!empty($decode) && !is_array($decode)) {
-                return new Response("Failed to decode JSON request body", 422);
+            if ($decode === null) {
+                return new Response("Request body contains invalid JSON", 400);
             }
 
             return $_POST = $decode ?? [];
