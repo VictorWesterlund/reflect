@@ -27,11 +27,11 @@
             // Set Content-Type of response with MIME type from enum
             header("Content-Type: {$this->type}");
 
-            // Response is not an internal request (from Call()) so we need to trigger an output from here
+            // Response is not an internal request (from Call Reflect\Call) so we need to trigger an output from here
             ENV::isset(ENV::INTERNAL_STDOUT) ? $this->stdout_internal() : $this->stdout_http();
         }
 
-        // Return output data directly. This method can be accessed from Reflect Call()
+        // Return output data directly. This method can be accessed from Reflect\Call
         public function output(): mixed {
             return $this->output;
         }
@@ -44,8 +44,11 @@
             exit($this->type === self::DEFAULT_TYPE ? json_encode($this->output) : $this->output);
         }
 
-        // Write data to Reflect Call() standard output
+        // Return Response to an internal request. Most likely from Reflect\Call
         private function stdout_internal(): mixed {
-            return $this->output();
+            // Set response envvar which lets downstream methods know we have a Response ready
+            ENV::set(ENV::INTERNAL_STDOUT_RESP, [$this->output, $this->code]);
+
+            return $this->output;
         }
     }

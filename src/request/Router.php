@@ -138,6 +138,11 @@
             // Create instance of endpoint class
             $endpoint = new $class();
 
+			// Bail out if a Response has been set before leaving the endpoint constructor scope
+			if (ENV::isset(ENV::INTERNAL_STDOUT_RESP)) {
+				return new Response(...ENV::get(ENV::INTERNAL_STDOUT_RESP));
+			}
+
             // Run main() method from endpoint class or return No Content respone if the endpoint didn't return
             return $endpoint->main() ?? new Response("", 204);
         }

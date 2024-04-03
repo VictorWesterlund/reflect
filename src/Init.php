@@ -28,7 +28,8 @@
 
 		// END User configurable environment variables
 
-		case INTERNAL_STDOUT = "internal_stdout";
+		case INTERNAL_STDOUT      = "internal_stdout";
+		case INTERNAL_STDOUT_RESP = "internal_stdout_resp";
 
 		// Returns true if Reflect environment variable is present and not empty in 
 		public static function isset(ENV $key): bool {
