@@ -138,22 +138,21 @@
             return array_column($resp->fetch_all(MYSQLI_ASSOC), RelUsersGroupsModel::REF_GROUP->value);
         }
 
-        // Return all available request methods to endpoint with key
+        // Return array of request methods available on $endpoint to current user
         public function get_options(string $endpoint): array {
-            $api_key = $this->get_api_key();
+            $methods = [];
 
-            $acl = $this->for(AclModel::TABLE)
-                ->with(AclModel::values())
-                ->where([
-                    "api_key"  => $api_key,
-                    "endpoint" => $endpoint
-                ])
-                // TODO: libmysqldriver
-                ->limit(6)
-                ->select(["method"]);
+            // Check each method
+            foreach (Method::cases() as $method) {
+                // Skipping OPTIONS will make it easier to test "no-access" against an empty array downstream
+                if ($method === Method::OPTIONS) continue;
+
+                if ($this->has_access($endpoint, $method)) {
+                    $methods[] = $method->value;
+                }
+            }
             
-            // Flatten array to only values of "method"
-            return !empty($acl) ? array_column($acl, "method") : [];
+            return $methods;
         }
 
         // Check if API key is authorized to call endpoint using method
