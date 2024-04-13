@@ -24,10 +24,11 @@
     class Database extends MySQL {
         private const EMPTY_KEY = "NULL";
 
-        private Connection $con;
+        protected static ?string $api_key;
+        protected static ?string $user_id;
+        protected static array $user_groups;
 
-        protected ?string $api_key = null;
-        protected ?string $user_id = null;
+        private Connection $con;
 
         public function __construct(Connection $con) {
             parent::__construct(
@@ -39,11 +40,24 @@
 
             $this->con = $con;
 
-            $this->api_key = self::get_key_from_request();
+            self::$api_key = self::get_key_from_berer();
+            self::$user_id = $this->get_user_id();
+            self::$user_groups = $this->get_user_groups();
+        }
 
-            if ($this->api_key) {
-                $this->user_id = $this->get_user_id();
+        // Get key from Authorization header
+        private static function get_key_from_berer(): ?string {
+            // No API key provided
+            if (empty($_SERVER["HTTP_AUTHORIZATION"])) {
+                // Mock Authorization header
+                $_SERVER["HTTP_AUTHORIZATION"] = "Bearer " . self::EMPTY_KEY;
             }
+
+            // Destruct Authorization header from <auth-scheme> <authorization-parameters>
+            [$scheme, $key] = explode(" ", $_SERVER["HTTP_AUTHORIZATION"], 2);
+
+            // Return berar token from Authorization header
+            return $scheme === "Bearer" || $key !== self::EMPTY_KEY ? $key : null;
         }
 
         // Returns true if the provided endpoint string is active
@@ -74,30 +88,10 @@
                 ->select(null)->num_rows === 1;
         }
 
-        // Get key from Authorization header
-        protected static function get_key_from_request(): ?string {
-            // No API key provided
-            if (empty($_SERVER["HTTP_AUTHORIZATION"])) {
-                // Mock Authorization header
-                $_SERVER["HTTP_AUTHORIZATION"] = "Bearer " . self::EMPTY_KEY;
-            }
-
-            // Destruct Authorization header from <auth-scheme> <authorization-parameters>
-            [$scheme, $key] = explode(" ", $_SERVER["HTTP_AUTHORIZATION"], 2);
-
-            // Invalid authorization scheme or empty key, treat request as public
-            if ($scheme !== "Bearer" || $key === self::EMPTY_KEY) {
-                return null;
-            }
-            
-            // Return API key if user is active. Else return null and treat the request as public
-            return $key ? $key : null;
-        }
-
         // Check if key and its user is active and not expired
-        protected function get_user_id(): ?string {
+        private function get_user_id(): ?string {
             // No key has been set
-            if (!$this->api_key) {
+            if (!self::$api_key) {
                 return null;
             }
             
@@ -113,7 +107,7 @@
             // Return user id for key if it exists and is not expired
             // NOTE: libmysqldriver\MySQL does not implement range operators (yet), so the questy string has to be built manually
             $sql = "SELECT `%s` FROM `%s` WHERE `%s` = ? AND `%s` = 1  AND (NOW() BETWEEN NOW() AND FROM_UNIXTIME(COALESCE(`%s`, UNIX_TIMESTAMP())))";
-            $res = $this->exec(sprintf($sql, ...$fvalues), $this->api_key);
+            $res = $this->exec(sprintf($sql, ...$fvalues), self::$api_key);
 
             // Key is not active or invalid
             if ($res->num_rows !== 1) {
@@ -127,10 +121,15 @@
         }
 
         // Return list of all group names associated with the current user
-        protected function get_user_groups(): array {
+        private function get_user_groups(): array {
+            // No groups if user is anonymous/public
+            if (!self::$api_key) {
+                return [];
+            }
+
             $resp = $this->for(RelUsersGroupsModel::TABLE)
                 ->where([
-                    RelUsersGroupsModel::REF_USER->value => $this->user_id
+                    RelUsersGroupsModel::REF_USER->value => self::$user_id
                 ])
                 ->select(RelUsersGroupsModel::REF_GROUP->value);
 
@@ -168,7 +167,7 @@
             }
 
             // No API key provided, or user is dissabled. Check if the endpoint is public
-            if (!$this->api_key || !$this->user_id) {
+            if (!self::$api_key || !self::$user_id) {
                 return $this->for(AclModel::TABLE)
                     ->where([
                         AclModel::REF_GROUP->value    => null,

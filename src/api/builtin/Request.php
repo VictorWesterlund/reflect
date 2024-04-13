@@ -9,6 +9,14 @@
 
 	class Request extends Database {
 		public static function get_api_key(): ?string {
-			return parent::get_key_from_request();
+			return parent::$api_key;
+		}
+
+		public static function get_user(): ?string {
+			return parent::$user_id;
+		}
+
+		public static function get_user_groups(): array {
+			return parent::$user_groups;
 		}
 	}
