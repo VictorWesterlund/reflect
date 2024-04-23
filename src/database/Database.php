@@ -156,6 +156,13 @@
 
         // Check if API key is authorized to call endpoint using method
         public function has_access(string $endpoint, Method $method): bool {
+            // ACL WHERE clause for public endpoints (group = NULL)
+            $public_endpoint = [
+                AclModel::REF_GROUP->value    => null,
+                AclModel::REF_ENDPOINT->value => $endpoint,
+                AclModel::METHOD->value       => $method->value
+            ];
+
             // Return false if endpoint is disabled or invalid
             if (!$this->endpoint_active($endpoint)) {
                 return false;
@@ -169,11 +176,7 @@
             // No API key provided, or user is dissabled. Check if the endpoint is public
             if (!self::$api_key || !self::$user_id) {
                 return $this->for(AclModel::TABLE)
-                    ->where([
-                        AclModel::REF_GROUP->value    => null,
-                        AclModel::REF_ENDPOINT->value => $endpoint,
-                        AclModel::METHOD->value       => $method->value
-                    ])
+                    ->where($public_endpoint)
                     ->limit(1)
                     ->select(null)->num_rows === 1;
             }
@@ -186,6 +189,9 @@
                     AclModel::REF_ENDPOINT->value => $endpoint,
                     AclModel::METHOD->value       => $method->value
                 ];
+
+                // Include a check if the endpoint is public
+                $group_queries[] = $public_endpoint;
             }
 
             // Return true if the user has access to endpoint and method through group id
