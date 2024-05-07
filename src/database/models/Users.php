@@ -1,6 +1,6 @@
 <?php
 
-	namespace Reflect\Database\Model\Users;
+	namespace Reflect\Database\Models\Users;
 
 	enum UsersModel: string {
 		const TABLE = "users";

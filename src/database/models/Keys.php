@@ -1,6 +1,6 @@
 <?php
 
-	namespace Reflect\Database\Model\Keys;
+	namespace Reflect\Database\Models\Keys;
 
 	enum KeysModel: string {
 		const TABLE = "keys";

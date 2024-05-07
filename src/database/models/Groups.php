@@ -1,8 +1,8 @@
 <?php
 
-	namespace Reflect\Database\Model\Groups;
+	namespace Reflect\Database\Models\Groups;
 
-	enum Model: string {		
+	enum GroupsModel: string {		
 		const TABLE = "groups";
 
 		case ID      = "id";

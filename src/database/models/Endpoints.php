@@ -1,6 +1,6 @@
 <?php
 
-	namespace Reflect\Database\Model\Endpoints;
+	namespace Reflect\Database\Models\Endpoints;
 
 	enum EndpointsModel: string {		
 		const TABLE = "endpoints";

@@ -1,8 +1,8 @@
 <?php
 
-	namespace Reflect\Database\Model\RelUsersGroups;
+	namespace Reflect\Database\Models\UsersGroups;
 
-	enum RelUsersGroupsModel: string {		
+	enum UsersGroupsModel: string {		
 		const TABLE = "rel_users_groups";
 
 		case REF_USER  = "ref_user";
