@@ -6,10 +6,10 @@
     use Reflect\Path;
     use Reflect\Method;
     use Reflect\Response;
-    use Reflect\Database\Database;
+    use Reflect\Request\Auth;
     use Reflect\Request\Connection;
 
-    require_once Path::reflect("src/database/Database.php");
+    require_once Path::reflect("src/request/Auth.php");
     require_once Path::reflect("src/request/Connection.php");
     
     // These builtins should be exposed to endpoints in userspace
@@ -21,7 +21,7 @@
 
     // This is the dynamic request router used to translate a RESTful request into a PHP class. It also checks each
     // request against AuthDB to make sure the provided key has access to the requested endpoint with method.
-    class Router extends Database {
+    class Router extends Auth {
         private Method $method;
         private string $endpoint;
         private Connection|null $con;
