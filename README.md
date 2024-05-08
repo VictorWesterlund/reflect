@@ -3,99 +3,135 @@
 </p>
 <h1 align="center">Reflect API Framework</h1>
 
-<p align="center">Reflect is a powerful API framework written in- and for PHP that aims to simplify the development of robust and secure APIs. This framework handles essential components such as authentication, routing, and request validation, allowing developers to focus on building their API endpoints quickly and efficiently.</p>
+<p align="center">Reflect is an API framework written in- and for PHP that aims to simplify endpoint development.<br>This framework handles authorization, routing, and request validation.</p>
 
 <h2 align="center">Key Features</h2>
 
-- **Authentication Handling**: Reflect provides built-in support for HTTP Bearer token authentication.
-- **Request Validation**: Reflect provides powerful request validation capabilities, ensuring that incoming requests meet your specified criteria. You can define validation rules for request parameters, headers, and body, enhancing the security and reliability of your API.
-- **Support for HTTP and UNIX Sockets**: Reflect supports both traditional HTTP requests as well as UNIX sockets, providing flexibility in how you accept and handle incoming requests. This allows you to integrate your API with various systems and technologies.
-- **One-to-One File Structure**: The framework follows a one-to-one file structure, where each endpoint has its own folder. This design pattern promotes code organization and makes it easy to locate and maintain specific API functionality.
-- **Separate Files for Request Methods**: Reflect encourages storing code for different HTTP methods (GET, POST, PUT, PATCH, DELETE) in separate files. This promotes modularity and allows for easier maintenance and testing.
-- **CLI Tool for Efficient Management**: Reflect includes a powerful Command-Line Interface (CLI) tool that streamlines the management of your API. The CLI tool allows you to easily create, update, and manage endpoints, users, API keys, and access rules. With intuitive commands and options, you can quickly configure and customize your API, saving you valuable development time and effort. Whether you need to add new endpoints, create user accounts, generate API keys, or define access permissions, the CLI tool provides a convenient and efficient way to handle these administrative tasks.
+- **ACL Authorization**: Fine-tuned control over endpoint access on a user group and/or method-level. Easier management with an included CLI-tool!
+- **Request Validation**: GET and POST parameter validation with [ReflectRules](https://github.com/victorwesterlund/reflect-rules-plugin).
+- **Endpoint = Path**: Endpoints follow a one-to-one relationship with the *folder* structure of the server - like an ordinary web server.
+- **Separate Files for Request Methods**: In each folder, all HTTP request methods have their own file named after its verb.
+- **Internal Request to Peer Endpoints**: Endpoints can internally call each other without leaving the request thread with proxying. The request will appear as any other HTTP request to the receiving endpoint.
 
-*Please note that the CLI tool is an optional component of Reflect, providing a convenient way to manage various aspects of your API. You can choose to use it according to your specific needs and preferences.*
+This is an example of what the simplest endpoint in Reflect can look like
+
+```
+HTTP GET https://api.example.com/foo/bar
+```
+```php
+// File: <endpoints>/foo/bar/GET.php
+
+use Reflect\Endpoint;
+use Reflect\Response;
+
+// Handle GET-request related stuff
+class GET_FooBar implements Endpoint {
+
+   // Runs before request validation but after request authorization
+   public function __construct() {}
+
+   // Runs after request validation, and only if the request is valid
+   public function main(): Response {
+      return new Response("This is the response body! It can be anything JSON-serializable");
+   }
+
+}
+```
 
 ---
 
-```php
-// URL:  https://localhost/foo/bar?foo=bar
-// File: /endpoints/foo/bar/GET.php
+> [!WARNING]
+> Technical documentation for Reflect is very incomplete, and user guides essentially missing. I am acutely aware of this and will make an effort to write documentation for this framework.
 
-use \Reflect\Endpoint;
-use \Reflect\Response;
+---
 
-class GET_FooBar implements Endpoint {
-   private string $foo;
+## More examples
 
-   public function __construct() {
-      $this->foo = "bar";
-   }
-   
-   public function main(): Response {
-      if ($_GET["foo"] === $this->foo) {
-         return new Response("Foo is a bar!");
-      }
-      
-      return new Response("Foo is not a bar", 400);
-   }
-}
-```
-*Reflect uses PHP's superglobals. $_GET for search parameters, $_POST for request body data (even JSON)*
+### Request input with native superglobals
 
-```php
-// URL:  https://localhost/foo/bar?foo=bar
-// File: /endpoints/foo/bar/PUT.php
-
-use \Reflect\Path;
-use \Reflect\Endpoint;
-use \Reflect\Response;
-use function \Reflect\Call;
-
-// Include other PHP files relative to your Reflect .env.ini "endpoints"
-require_once Path::root("/MyDatabase.php");
-
-class POST_FooBar extends MyDatabase implements Endpoint {
-   public function __construct() {      
-      parent::__construct("mydatabase");
-   }
-   
-   private function insert_uuid(): bool {
-      return $this->do_some_db_stuff($_POST["example_uuid"]);
-   }
-   
-   public function main(): Response {
-      // Call another Reflect endpoint without generating a new request with \Reflect\Call
-      // This function returns a \Reflect\Response object.
-      $valid = Call("/foo/bar?foo={$_GET["foo"]}", "GET");
-      
-      if (!$valid->ok) {
-         return new Response("GET told me that 'foo' is not valid", 400);
-      }
-      
-      return $this->insert_uuid() 
-         ? new Response("Nice!", 201)
-         : new Response(["Oh no..", $example_insert_db], 500);
-   }
-}
-```
-
-## Request validation
-
-**The official [`Request validation plugin`](https://github.com/VictorWesterlund/reflect-rules-plugin) for Reflect lets your define constraints on GET and POST data.**
+Reflect exposes incoming GET (query string) and POST parameters as native PHP would through the `$_GET` and `$_POST` superglobal variables. This is true even if the endpoint is being called internally from another endpoint.
 
 > [!TIP]
-> Anything run from an Endpoint `__construct()` will be executed before `main()`. This is a good place to put your stand-alone or custom request validation.
+> In addition to PHP's native decoding of `application/x-www-form-urlencoded` and `multipart/form-data`. Reflect will also decode JSON key-value objects into `$_POST` if the `Content-Type: application/json` request header is set!
 
-# Installation
+```
+HTTP POST https://api.example.com/create
+Content-Type: application/json
 
-[See INSTALL.md for installation instructions](https://github.com/VictorWesterlund/reflect/blob/master/INSTALL.md)
+{"foo": "bar"}
+```
+```php
+// File: <endpoints>/create/POST.php
 
-# Get started / Documentation
+use Reflect\Endpoint;
+use Reflect\Response;
 
-Read the [Get started guide](https://github.com/VictorWesterlund/reflect/wiki/Get-Started) in the Wiki.
+// Class names follow the following pattern:
+// <REQUEST METHOD IN CAPS>_<PascalCaseOfEndpointPath>
+class POST_Create implements Endpoint {
 
-[Check out the Wiki](https://github.com/VictorWesterlund/reflect/wiki) here on GitHub for the full documentation.
+   public function __construct() {}
+
+   public function main(): Response {
+      // Pass an HTTP Response code as the second argument, defaults to 200 OK
+      return new Response($_POST["foo"], 201);
+   }
+
+}
+```
+
+### Calling other endpoints internally
+
+Endpoints can call each other internally without creating new HTTP requests. Internal calls are superglobal-proxied ([more info](https://github.com/VictorWesterlund/php-globalsnapshot)) and can be really fast to execute with opcache!
+
+> [!NOTE]
+> This demo uses `Reflect\Call` which has no documentation. It follows the same pattern as all reflect clients (listed below). See the [Reflect client for PHP](https://github.com/VictorWesterlund/reflect-client-php) as an example for now
+
+```
+HTTP PATCH https://api.example.com/users?id=someone
+Content-Type: application/json
+
+{"display_name":"Someone Someoneson"}
+```
+```php
+// File: <endpoints>/user/PATCH.php
+
+use Reflect\Call;
+use Reflect\Endpoint;
+use Reflect\Response;
+
+class PATCH_Users implements Endpoint {
+
+   public function __construct() {}
+
+   public function main(): Response {
+      // Call another Reflect endpoint by pathname, as if it was an HTTP call
+      $request = new Call("/users");
+
+      // Associative array of $_GET parameters available to called endpoint
+      $request->params([
+         "id" => $_GET["id"]
+      ]);
+
+      // Returns a Reflect\Response
+      $response = $request->get();
+
+      // Return response body as JSON, for example
+      $user = $response->ok ? $user->json() : new Response("Response can be called anywhere, even here for example");
+
+      return $this->update_username_by_id($user["id"], $_POST["display_name"])
+         ? new Response("Yay")
+         : new Response("Nay", 500);
+   }
+
+}
+```
+
+### Request validation
+
+Incoming requests can be validated by you, or by using this plugin:
+
+[**See ReflectRules for more information**](https://github.com/VictorWesterlund/reflect-rules-plugin)
 
 ## Client libraries
 
