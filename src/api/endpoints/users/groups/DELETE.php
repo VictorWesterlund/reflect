@@ -60,7 +60,7 @@
 				->where($_POST)
 				->delete()
 					// Return user id that was deleted if successful
-					? new Response("", 204)
+					? new Response($_POST[UsersGroupsModel::REF_USER->value])
 					: new Response(self::error_prefix(), 500);
 		}
 	}

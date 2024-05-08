@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "d7b9032f03fb9b2b69f33263320baf05",
+    "content-hash": "592b0998e6d6e0beee6b4da1951d17a4",
     "packages": [
         {
             "name": "reflect/plugin-rules",
@@ -42,6 +42,43 @@
                 "source": "https://github.com/VictorWesterlund/reflect-rules-plugin/tree/1.5.0"
             },
             "time": "2024-01-17T11:07:44+00:00"
+        },
+        {
+            "name": "victorwesterlund/globalsnapshot",
+            "version": "1.0.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/VictorWesterlund/php-globalsnapshot.git",
+                "reference": "80cb5d17b2f6228e174edb0853b2c39c5d6dac21"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/VictorWesterlund/php-globalsnapshot/zipball/80cb5d17b2f6228e174edb0853b2c39c5d6dac21",
+                "reference": "80cb5d17b2f6228e174edb0853b2c39c5d6dac21",
+                "shasum": ""
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "victorwesterlund\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "Unlicense"
+            ],
+            "authors": [
+                {
+                    "name": "Victor Westerlund",
+                    "email": "victor.vesterlund@gmail.com"
+                }
+            ],
+            "description": "Capture and restore the state of all PHP superglobals.",
+            "support": {
+                "issues": "https://github.com/VictorWesterlund/php-globalsnapshot/issues",
+                "source": "https://github.com/VictorWesterlund/php-globalsnapshot/tree/1.0.2"
+            },
+            "time": "2024-04-19T09:43:51+00:00"
         },
         {
             "name": "victorwesterlund/libmysqldriver",
