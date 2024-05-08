@@ -86,7 +86,7 @@
 
 			return $this->for(UsersGroupsModel::TABLE)
 				->insert($_POST)
-				? new Response($_POST[UsersGroupsModel::ID->value], 201)
+				? new Response($_POST[UsersGroupsModel::REF_USER->value], 201)
 				: new Response(self::error_prefix(), 500);
 		}
 	}
