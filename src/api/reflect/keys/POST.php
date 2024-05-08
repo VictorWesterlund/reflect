@@ -1,88 +1,94 @@
 <?php
 
-    use \Reflect\Path;
-    use \Reflect\Endpoint;
-    use \Reflect\Response;
-    use function \Reflect\Call;
-    use \Reflect\Request\Method;
+	use Reflect\Call;
+	use Reflect\Path;
+	use Reflect\Endpoint;
+	use Reflect\Response;
 
-    use \ReflectRules\Type;
-    use \ReflectRules\Rules;
-    use \ReflectRules\Ruleset;
+	use ReflectRules\Type;
+	use ReflectRules\Rules;
+	use ReflectRules\Ruleset;
 
-    use \Reflect\Database\Database;
-    use \Reflect\Database\Keys\Model;
+	use Reflect\API\Endpoints;
+	use Reflect\API\Controller;
+	use Reflect\Database\Models\Keys\KeysModel;
+	use Reflect\Database\Models\Users\UsersModel;
 
-    require_once Path::reflect("src/database/Database.php");
-    require_once Path::reflect("src/database/model/Keys.php");
+	require_once Path::reflect("src/api/Endpoints.php");
+	require_once Path::reflect("src/api/Controller.php");
+	require_once Path::reflect("src/database/models/Keys.php");
+	require_once Path::reflect("src/database/models/Users.php");
 
-    class POST_ReflectKey extends Database implements Endpoint {
-        private Ruleset $rules;
+	class POST_ReflectKeys extends Controller implements Endpoint {
+		private Ruleset $ruleset;
 
-        public function __construct() {
-            $this->rules = new Ruleset();
+		public function __construct() {
+			$this->ruleset = new Ruleset(strict: true);
 
-            $this->rules->POST([
-                (new Rules("id"))
-                    ->type(Type::STRING)
-                    ->min(32)
-                    ->max(32),
+			$this->ruleset->POST([
+				(new Rules(KeysModel::ID->value))
+					->type(Type::STRING)
+					->min(1)
+					->max(parent::MYSQL_VARCHAR_MAX_SIZE)
+					->default(parent::gen_uuid4()),
 
-                (new Rules("user"))
-                    ->required()
-                    ->type(Type::STRING)
-                    ->max(255),
+				(new Rules(KeysModel::ACTIVE->value))
+					->type(Type::BOOLEAN)
+					->default(true),
 
-                (new Rules("expires"))
-                    ->type(Type::NUMBER)
-                    ->max(PHP_INT_MAX)
-            ]);
-            
-            parent::__construct();
-        }
+				(new Rules(KeysModel::REF_USER->value))
+					->required()
+					->type(Type::STRING)
+					->min(1)
+					->max(parent::MYSQL_VARCHAR_MAX_SIZE),
 
-        // Derive key from a SHA256 hash of user id and current time if no custom key is provided
-        private function derive_key(): string {
-            return $_POST["id"] = substr(hash("sha256", implode("", [$_POST["user"], time()])), -32);
-        }
+				(new Rules(KeysModel::EXPIRES->value))
+					->type(Type::NULL)
+					->type(Type::NUMBER)
+					->min(0)
+					->max(parent::MYSQL_INT_MAX_SIZE)
+					->default(null),
 
-        public function main(): Response {
-            // Request parameters are invalid, bail out here
-            if (!$this->rules->is_valid()) {
-                return new Response($this->rules->get_errors(), 422);    
-            }
+				(new Rules(KeysModel::CREATED->value))
+					->type(Type::NUMBER)
+					->min(0)
+					->max(parent::MYSQL_INT_MAX_SIZE)
+					->default(time())
+			]);
+			
+			parent::__construct($this->ruleset);
+		}
 
-            // Check that the user exists and is active
-            $user = Call("reflect/user?id={$_POST["user"]}", Method::GET);
-            if (!$user->ok) {
-                return new Response(["Failed to create key", "No user with id '{$_POST["user"]}' found"], 404);
-            }
+		// Returns true if an API key exists with the provided id
+		private function user_exists(): bool {
+			return (new Call(Endpoints::USERS->endpoint()))
+				->params([UsersModel::ID->value => $_POST[KeysModel::REF_USER->value]])
+				->get()->ok;
+		}
 
-            // Generate API key if not provided
-            $_POST["id"] = !empty($_POST["id"]) ? $_POST["id"] : $this->derive_key();
+		// Returns true if a key exists with the provided id
+		private function key_exists(): bool {
+			return (new Call(Endpoints::KEYS->endpoint()))
+				->params([KeysModel::ID->value => $_POST[KeysModel::ID->value]])
+				->get()->ok;
+		}
 
-            // Attempt to add key
-            try {
-                $insert = $this->for(Model::TABLE)
-                    ->with(Model::values())
-                    ->insert([
-                        $_POST["id"],
-                        // Set key as active
-                        true,
-                        // Set user id
-                        $_POST["user"],
-                        // Set expiry timestamp if defined
-                        !empty($_POST["expires"]) ? $_POST["expires"] : null,
-                        // Set created timestamp
-                        time()
-                    ]);
-            } catch (\mysqli_sql_exception $error) {
-                return new Response("Failed to add key", 500);
-            }
+		public function main(): Response {
+			// Bail out if key with id already exist
+			if ($this->key_exists()) {
+				return new Response("Failed to create key with id '{$_POST[KeysModel::ID->value]}}'. Key already exist", 409);
+			}
 
-            // Check if key got added sucessfully
-            return Call("reflect/key?id={$_POST["id"]}", Method::GET)->ok
-                ? new Response("OK")
-                : new Response("Failed to add key", 500);
-        }
-    }
+			// Verify that the requested user exist if defined
+			if ($_POST[KeysModel::REF_USER->value]) {
+				if (!$this->user_exists()) {
+					return new Response("Failed to create key with id '{$_POST[KeysModel::ID->value]}}'. User with id '{$_POST[KeysModel::REF_USER->value]}' does not exist", 404);
+				}
+			}
+
+			return $this->for(KeysModel::TABLE)
+				->insert($_POST)
+				? new Response($_POST[KeysModel::ID->value], 201)
+				: new Response(self::error_prefix(), 500);
+		}
+	}

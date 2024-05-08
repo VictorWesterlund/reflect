@@ -11,30 +11,30 @@
 
 	use Reflect\API\Endpoints;
 	use Reflect\API\Controller;
-	use Reflect\Database\Models\Users\UsersModel;
+	use Reflect\Database\Models\Groups\GroupsModel;
 
 	require_once Path::reflect("src/api/Endpoints.php");
 	require_once Path::reflect("src/api/Controller.php");
-	require_once Path::reflect("src/database/models/Users.php");
+	require_once Path::reflect("src/database/models/Groups.php");
 
-	class POST_ReflectUsers extends Controller implements Endpoint {
+	class POST_ReflectGroups extends Controller implements Endpoint {
 		private Ruleset $ruleset;
 
 		public function __construct() {
 			$this->ruleset = new Ruleset(strict: true);
 
 			$this->ruleset->POST([
-				(new Rules(UsersModel::ID->value))
+				(new Rules(GroupsModel::ID->value))
 					->type(Type::STRING)
 					->min(1)
 					->max(parent::MYSQL_VARCHAR_MAX_SIZE)
 					->default(parent::gen_uuid4()),
 
-				(new Rules(UsersModel::ACTIVE->value))
+				(new Rules(GroupsModel::ACTIVE->value))
 					->type(Type::BOOLEAN)
 					->default(true),
 
-				(new Rules(UsersModel::CREATED->value))
+				(new Rules(GroupsModel::CREATED->value))
 					->type(Type::NUMBER)
 					->min(0)
 					->max(parent::MYSQL_INT_MAX_SIZE)
@@ -45,21 +45,21 @@
 		}
 
 		// Returns true if a user exists with the provided id
-		private function user_exists(): bool {
-			return (new Call(Endpoints::USERS->endpoint()))
-				->params([UsersModel::ID->value => $_POST[UsersModel::ID->value]])
+		private function group_exists(): bool {
+			return (new Call(Endpoints::GROUPS->endpoint()))
+				->params([GroupsModel::ID->value => $_POST[GroupsModel::ID->value]])
 				->get()->ok;
 		}
 
 		public function main(): Response {
-			// Bail out if user with id already exist
-			if ($this->user_exists()) {
-				return new Response("Failed to create user with id '{$_POST[UsersModel::ID->value]}'. User already exist", 409);
+			// Bail out if group with id already exist
+			if ($this->group_exists()) {
+				return new Response("Failed to create group with id '{$_POST[GroupsModel::ID->value]}'. Group already exist", 409);
 			}
 
-			return $this->for(UsersModel::TABLE)
+			return $this->for(GroupsModel::TABLE)
 				->insert($_POST)
-					? new Response($_POST[UsersModel::ID->value], 201)
-					: new Response(self::error_prefix(), 500);
+				? new Response($_POST[GroupsModel::ID->value], 201)
+				: new Response(self::error_prefix(), 500);
 		}
 	}

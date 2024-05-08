@@ -11,20 +11,20 @@
 
 	use Reflect\API\Endpoints;
 	use Reflect\API\Controller;
-	use Reflect\Database\Models\Users\UsersModel;
+	use Reflect\Database\Models\Endpoints\EndpointsModel;
 
 	require_once Path::reflect("src/api/Endpoints.php");
 	require_once Path::reflect("src/api/Controller.php");
-	require_once Path::reflect("src/database/models/Users.php");
+	require_once Path::reflect("src/database/models/Endpoints.php");
 
-	class PUT_ReflectUsers extends Controller implements Endpoint {
+	class PUT_ReflectEndpoints extends Controller implements Endpoint {
 		private Ruleset $ruleset;
 
 		public function __construct() {
 			$this->ruleset = new Ruleset(strict: true);
 
 			$this->ruleset->GET([
-				(new Rules(UsersModel::ID->value))
+				(new Rules(EndpointsModel::ID->value))
 					->required()
 					->type(Type::STRING)
 					->min(1)
@@ -32,21 +32,15 @@
 			]);
 
 			$this->ruleset->POST([
-				(new Rules(UsersModel::ID->value))
+				(new Rules(EndpointsModel::ID->value))
 					->required()
 					->type(Type::STRING)
 					->min(1)
 					->max(parent::MYSQL_VARCHAR_MAX_SIZE),
 
-				(new Rules(UsersModel::ACTIVE->value))
+				(new Rules(EndpointsModel::ACTIVE->value))
 					->required()
-					->type(Type::BOOLEAN),
-
-				(new Rules(UsersModel::CREATED->value))
-					->required()
-					->type(Type::NUMBER)
-					->min(0)
-					->max(parent::MYSQL_INT_MAX_SIZE)
+					->type(Type::BOOLEAN)
 			]);
 			
 			parent::__construct($this->ruleset);
@@ -54,8 +48,8 @@
 
 		public function main(): Response {
 			// Use the PATCH endpoint to PUT all values for entity by id
-			return (new Call(Endpoints::USERS->endpoint()))
-				->params([UsersModel::ID->value => $_GET[UsersModel::ID->value]])
+			return (new Call(Endpoints::ENDPOINTS->endpoint()))
+				->params([EndpointsModel::ID->value => $_GET[EndpointsModel::ID->value]])
 				->patch($_POST);
 		}
 	}

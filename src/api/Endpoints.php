@@ -10,8 +10,7 @@
 		case USERS        = "users";
 		case GROUPS       = "groups";
 		case ENDPOINTS    = "endpoints";
-		case SESSION_KEY  = "session/key";
-		case SESSION_USER = "session/user";
+		case USERS_GROUPS = "users/groups";
 
 		// Prepend configured Reflect internal-api prefix to Endpoint
 		public function endpoint(): string {

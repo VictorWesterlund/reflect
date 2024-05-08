@@ -1,88 +1,73 @@
 <?php
 
-    use \Reflect\Path;
-    use \Reflect\Endpoint;
-    use \Reflect\Response;
-    use function \Reflect\Call;
-    use \Reflect\Request\Method;
+	use Reflect\Call;
+	use Reflect\Path;
+	use Reflect\Endpoint;
+	use Reflect\Response;
 
-    use \ReflectRules\Type;
-    use \ReflectRules\Rules;
-    use \ReflectRules\Ruleset;
+	use ReflectRules\Type;
+	use ReflectRules\Rules;
+	use ReflectRules\Ruleset;
 
-    use \Reflect\Database\Database;
-    use \Reflect\Database\Keys\Model;
+	use Reflect\API\Endpoints;
+	use Reflect\API\Controller;
+	use Reflect\Database\Models\Keys\KeysModel;
 
-    require_once Path::reflect("src/database/Database.php");
-    require_once Path::reflect("src/database/model/Keys.php");
+	require_once Path::reflect("src/api/Endpoints.php");
+	require_once Path::reflect("src/api/Controller.php");
+	require_once Path::reflect("src/database/models/Keys.php");
 
-    class PUT_ReflectKey extends Database implements Endpoint {
-        private Ruleset $rules;
+	class PUT_ReflectKeys extends Controller implements Endpoint {
+		private Ruleset $ruleset;
 
-        public function __construct() {
-            $this->rules = new Ruleset();
+		public function __construct() {
+			$this->ruleset = new Ruleset(strict: true);
 
-            $this->rules->GET([
-                (new Rules("id"))
-                    ->required()
-                    ->max(255)
-            ]);
+			$this->ruleset->GET([
+				(new Rules(KeysModel::ID->value))
+					->required()
+					->type(Type::STRING)
+					->min(1)
+					->max(parent::MYSQL_VARCHAR_MAX_SIZE)
+			]);
 
-            $this->rules->POST([
-                (new Rules("id"))
-                    ->required()
-                    ->type(Type::STRING),
-                
-                (new Rules("user"))
-                    ->required()
-                    ->type(Type::STRING)
-                    ->max(128),
-                
-                (new Rules("active"))
-                    ->required()
-                    ->type(Type::BOOLEAN),
-                
-                (new Rules("expires"))
-                    ->required()
-                    ->type(Type::NUMBER)
-                    ->max(PHP_INT_MAX)
-            ]);
+			$this->ruleset->POST([
+				(new Rules(KeysModel::ID->value))
+					->required()
+					->type(Type::STRING)
+					->min(1)
+					->max(parent::MYSQL_VARCHAR_MAX_SIZE),
 
-            parent::__construct();
-        }
+				(new Rules(KeysModel::ACTIVE->value))
+					->required()
+					->type(Type::BOOLEAN),
 
-        // Check if user exists or return true if no user change requested
-        private function user_exists(): bool {
-            return in_array("user", array_keys($_POST))
-                ? Call("reflect/user?id={$_POST["user"]}", Method::GET)->ok
-                : true;
-        }
+				(new Rules(KeysModel::REF_USER->value))
+					->required()
+					->type(Type::STRING)
+					->min(1),
 
-        public function main(): Response {
-            // Request parameters are invalid, bail out here
-            if (!$this->rules->is_valid()) {
-                return new Response($this->rules->get_errors(), 422);    
-            }
-            
-            // Get existing key details
-            $key = Call("reflect/key?id={$_GET["id"]}", Method::GET);
-            if (!$key->ok) {
-                return new Response(["No key", "No API key with id '{$_GET["id"]}' was found"], 404);
-            }
+				(new Rules(KeysModel::EXPIRES->value))
+					->required()
+					->type(Type::NULL)
+					->type(Type::NUMBER)
+					->min(0)
+					->max(parent::MYSQL_INT_MAX_SIZE),
 
-            // Check if user exists
-            if (!$this->user_exists()) {
-                return new Response(["No user with id '{$_POST["user"]}' was found"], 404);
-            }
+				(new Rules(KeysModel::CREATED->value))
+					->required()
+					->type(Type::NUMBER)
+					->min(0)
+					->max(parent::MYSQL_INT_MAX_SIZE)
+			]);
+			
+			parent::__construct($this->ruleset);
+		}
 
-            $update = $this->for(Model::TABLE)
-                ->with(Model::values())
-                ->where([
-                    Model::ID->value => $_GET["id"]
-                ])
-                ->update(array_values($_POST));
-
-            // Return key id if update was successful
-            return $update && $this->affected_rows === 1 ? new Response($_POST["id"]) : new Response("Failed to update key", 500);
-        }
-    }
+		public function main(): Response {
+			// Use the PATCH endpoint to PUT all values for entity by id
+			return (new Call(Endpoints::KEYS->endpoint()))
+				->params([UsersModel::ID->value => $_GET[UsersModel::ID->value]])
+				->patch($_POST);
+		}
+	}

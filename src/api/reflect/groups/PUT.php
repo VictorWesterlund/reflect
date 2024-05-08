@@ -11,20 +11,20 @@
 
 	use Reflect\API\Endpoints;
 	use Reflect\API\Controller;
-	use Reflect\Database\Models\Users\UsersModel;
+	use Reflect\Database\Models\Groups\GroupsModel;
 
 	require_once Path::reflect("src/api/Endpoints.php");
 	require_once Path::reflect("src/api/Controller.php");
-	require_once Path::reflect("src/database/models/Users.php");
+	require_once Path::reflect("src/database/models/Groups.php");
 
-	class PUT_ReflectUsers extends Controller implements Endpoint {
+	class PUT_ReflectGroups extends Controller implements Endpoint {
 		private Ruleset $ruleset;
 
 		public function __construct() {
 			$this->ruleset = new Ruleset(strict: true);
 
 			$this->ruleset->GET([
-				(new Rules(UsersModel::ID->value))
+				(new Rules(GroupsModel::ID->value))
 					->required()
 					->type(Type::STRING)
 					->min(1)
@@ -32,17 +32,17 @@
 			]);
 
 			$this->ruleset->POST([
-				(new Rules(UsersModel::ID->value))
+				(new Rules(GroupsModel::ID->value))
 					->required()
 					->type(Type::STRING)
 					->min(1)
 					->max(parent::MYSQL_VARCHAR_MAX_SIZE),
 
-				(new Rules(UsersModel::ACTIVE->value))
+				(new Rules(GroupsModel::ACTIVE->value))
 					->required()
 					->type(Type::BOOLEAN),
 
-				(new Rules(UsersModel::CREATED->value))
+				(new Rules(GroupsModel::CREATED->value))
 					->required()
 					->type(Type::NUMBER)
 					->min(0)
@@ -54,8 +54,8 @@
 
 		public function main(): Response {
 			// Use the PATCH endpoint to PUT all values for entity by id
-			return (new Call(Endpoints::USERS->endpoint()))
-				->params([UsersModel::ID->value => $_GET[UsersModel::ID->value]])
+			return (new Call(Endpoints::GROUPS->endpoint()))
+				->params([GroupsModel::ID->value => $_GET[GroupsModel::ID->value]])
 				->patch($_POST);
 		}
 	}

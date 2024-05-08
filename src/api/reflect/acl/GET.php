@@ -1,59 +1,66 @@
 <?php
 
-    use \Reflect\Path;
-    use \Reflect\Endpoint;
-    use \Reflect\Response;
-    use \Reflect\Request\Method;
+	use Reflect\Path;
+	use Reflect\Endpoint;
+	use Reflect\Response;
 
-    use \ReflectRules\Type;
-    use \ReflectRules\Rules;
-    use \ReflectRules\Ruleset;
+	use ReflectRules\Type;
+	use ReflectRules\Rules;
+	use ReflectRules\Ruleset;
 
-    use \Reflect\Database\Database;
-    use \Reflect\Database\Acl\Model;
+	use Reflect\API\Controller;
+	use Reflect\Database\Models\Acl\AclModel;
+	use Reflect\Database\Models\Acl\MethodEnum;
 
-    require_once Path::reflect("src/database/Database.php");
-    require_once Path::reflect("src/database/model/Acl.php");
+	require_once Path::reflect("src/api/Controller.php");
+	require_once Path::reflect("src/database/models/Acl.php");
 
-    class GET_ReflectAcl extends Database implements Endpoint {
-        private Ruleset $rules;
-        
-        public function __construct() {
-            $this->rules = new Ruleset();
+	class GET_ReflectAcl extends Controller implements Endpoint {
+		private Ruleset $ruleset;
 
-            $this->rules->GET([
-                (new Rules("endpoint"))
-                    ->type(Type::STRING)
-                    ->min(1)
-                    ->max(255),
+		public function __construct() {
+			$this->ruleset = new Ruleset(strict: true);
 
-                (new Rules("method"))
-                    ->type(Type::STRING)
-                    ->min(1),
+			$this->ruleset->GET([
+				(new Rules(AclModel::ID->value))
+					->type(Type::STRING)
+					->min(1)
+					->max(parent::MYSQL_VARCHAR_MAX_SIZE),
 
-                (new Rules("api_key"))
-                    ->type(Type::STRING)
-                    ->min(1)
-                    ->max(255)
-            ]);
+				(new Rules(AclModel::REF_GROUP->value))
+					->type(Type::NULL)
+					->type(Type::STRING)
+					->min(1)
+					->max(parent::MYSQL_VARCHAR_MAX_SIZE),
 
-            parent::__construct();
-        }
+				(new Rules(AclModel::REF_ENDPOINT->value))
+					->type(Type::STRING)
+					->min(1)
+					->max(parent::MYSQL_VARCHAR_MAX_SIZE),
 
-        public function main(): Response {
-            // Request parameters are invalid, bail out here
-            if (!$this->rules->is_valid()) {
-                return new Response($this->rules->get_errors(), 422);    
-            }
+				(new Rules(AclModel::METHOD->value))
+					->type(Type::ENUM, array_column(MethodEnum::cases(), "name")),
 
-            $acl = $this->for(Model::TABLE)
-                ->with(Model::values())
-                // Filter columns based on search parameters provided in request
-                ->where(self::filter_columns($_GET, Model::values()))
-                ->select(Model::values());
+				(new Rules(AclModel::CREATED->value))
+					->type(Type::NUMBER)
+					->min(0)
+					->max(parent::MYSQL_INT_MAX_SIZE)
+			]);
+			
+			parent::__construct($this->ruleset);
+		}
 
-            return $acl->num_rows > 0 
-                ? new Response($acl->fetch_all())
-                : new Response(["Access denied", "No ACL rules defined for the provided parameters"], 404);
-        }
-    }
+		public function main(): Response {
+			return parent::return_list_response(
+				$this->for(AclModel::TABLE)
+				->where($_GET)
+				->select([
+					AclModel::ID->value,
+					AclModel::REF_GROUP->value,
+					AclModel::REF_ENDPOINT->value,
+					AclModel::METHOD->value,
+					AclModel::CREATED->value
+				])
+			);
+		}
+	}

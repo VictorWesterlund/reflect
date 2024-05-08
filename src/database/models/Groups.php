@@ -7,5 +7,5 @@
 
 		case ID      = "id";
 		case ACTIVE  = "active";
-		case CREATED = "created";
+		case CREATED = "date_created";
 	}

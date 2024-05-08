@@ -1,106 +1,111 @@
 <?php
 
-    use \Reflect\Path;
-    use \Reflect\Endpoint;
-    use \Reflect\Response;
-    use function \Reflect\Call;
-    use \Reflect\Request\Method;
+	use Reflect\Call;
+	use Reflect\Path;
+	use Reflect\Endpoint;
+	use Reflect\Response;
 
-    use \ReflectRules\Type;
-    use \ReflectRules\Rules;
-    use \ReflectRules\Ruleset;
+	use ReflectRules\Type;
+	use ReflectRules\Rules;
+	use ReflectRules\Ruleset;
 
-    use \Reflect\Database\Database;
-    use \Reflect\Database\Acl\Model;
+	use Reflect\API\Endpoints;
+	use Reflect\API\Controller;
+	use Reflect\Database\Models\Acl\AclModel;
+	use Reflect\Database\Models\Acl\MethodEnum;
+	use Reflect\Database\Models\Groups\GroupsModel;
+	use Reflect\Database\Models\Endpoints\EndpointsModel;
 
-    require_once Path::reflect("src/database/Database.php");
-    require_once Path::reflect("src/database/model/Acl.php");
+	require_once Path::reflect("src/api/Endpoints.php");
+	require_once Path::reflect("src/api/Controller.php");
+	require_once Path::reflect("src/database/models/Acl.php");
+	require_once Path::reflect("src/database/models/Groups.php");
+	require_once Path::reflect("src/database/models/Endpoints.php");
 
-    class POST_ReflectAcl extends Database implements Endpoint {
-        private Ruleset $rules;
+	class POST_ReflectAcl extends Controller implements Endpoint {
+		private Ruleset $ruleset;
 
-        public function __construct() {
-            $this->rules = new Ruleset();
+		public function __construct() {
+			$this->ruleset = new Ruleset(strict: true);
 
-            $this->rules->POST([
-                (new Rules("api_key"))
-                    ->required()
-                    ->type(Type::STRING)
-                    ->max(255),
+			$this->ruleset->POST([
+				(new Rules(AclModel::ID->value))
+					->type(Type::STRING)
+					->min(1)
+					->max(parent::MYSQL_VARCHAR_MAX_SIZE)
+					->default(parent::gen_uuid4()),
 
-                (new Rules("endpoint"))
-                    ->required()
-                    ->type(Type::STRING)
-                    ->max(255),
+				(new Rules(AclModel::REF_GROUP->value))
+					->type(Type::NULL)
+					->type(Type::STRING)
+					->min(1)
+					->max(parent::MYSQL_VARCHAR_MAX_SIZE)
+					->default(null),
 
-                (new Rules("method"))
-                    ->required()
-                    ->type(Type::STRING)
-            ]);
-            
-            parent::__construct();
-        }
+				(new Rules(AclModel::REF_ENDPOINT->value))
+					->required()
+					->type(Type::STRING)
+					->min(1)
+					->max(parent::MYSQL_VARCHAR_MAX_SIZE),
 
-        // Generate hash of ACL parameters.
-        // This will prevent the same ACL being defined more than once due to UNIQUE constraint fail on id column
-        public static function generate_hash(): string {
-            return substr(hash("sha256", implode("", [
-                $_POST["api_key"],
-                $_POST["endpoint"],
-                $_POST["method"]->value
-            ])), -32);
-        }
+				(new Rules(AclModel::METHOD->value))
+					->required()
+					->type(Type::ENUM, array_column(MethodEnum::cases(), "name")),
 
-        public function main(): Response {
-            // Request parameters are invalid, bail out here
-            if (!$this->rules->is_valid()) {
-                return new Response($this->rules->get_errors(), 422);    
-            }
+				(new Rules(AclModel::CREATED->value))
+					->type(Type::NUMBER)
+					->min(0)
+					->max(parent::MYSQL_INT_MAX_SIZE)
+					->default(time())
+			]);
+			
+			parent::__construct($this->ruleset);
+		}
 
-            // Check endpoint is valid
-            if (!Call("reflect/endpoint?id={$_POST["endpoint"]}", Method::GET)->ok) {
-                return new Response("No endpoint with id '{$_POST["endpoint"]}' was found", 404);
-            }
+		// Returns true if an endpoint by id exists
+		private function endpoint_exists(): bool {
+			return (new Call(Endpoints::ENDPOINTS->endpoint()))
+				->params([EndpointsModel::ID->value => $_POST[AclModel::REF_ENDPOINT->value]])
+				->get()->ok;
+		}
 
-            // Check key is valid
-            if (!Call("reflect/key?id={$_POST["api_key"]}", Method::GET)->ok) {
-                return new Response("No API key with id '{$_POST["endpoint"]}' was found", 404);
-            }
+		// Returns true if a group by id exists
+		private function group_exists(): bool {
+			return (new Call(Endpoints::GROUPS->endpoint()))
+				->params([GroupsModel::ID->value => $_POST[AclModel::REF_GROUP->value]])
+				->get()->ok;
+		}
 
-            // Attempt to resolve HTTP verb from uppercase string
-            $_POST["method"] = Method::tryFrom(strtoupper($_POST["method"])) ?? new Response([
-                "Method unsupported",
-                "Method '{$_POST["method"]}' is not a supported HTTP verb",
-                405
-            ]);
+		// Returns true if an ACL rule with the requested composition already exist
+		private function acl_rule_exists(): bool {
+			return (new Call(Endpoints::ACL->endpoint()))
+				->params([
+					AclModel::REF_ENDPOINT->value => $_POST[AclModel::REF_ENDPOINT->value],
+					AclModel::REF_GROUP->value    => $_POST[AclModel::REF_GROUP->value],
+					AclModel::METHOD->value       => $_POST[AclModel::METHOD->value]
+				])
+				->get()->ok;
+		}
 
-            // Check if the rule has already been granted
-            if (Call("reflect/acl?api_key={$_POST["api_key"]}&endpoint={$_POST["endpoint"]}&method={$_POST["method"]->value}", Method::GET)->ok) {
-                return new Response("ACL rule already exists", 402);
-            }
+		public function main(): Response {
+			// Can not create ACL rule for nonexistent endpoint
+			if (!$this->endpoint_exists()) {
+				return new Response("Failed to create ACL rule. Endpoint with id '{$_POST[AclModel::REF_ENDPOINT->value]}' does not exist", 409);
+			}
 
-            // Attempt to add user
-            try {
-                $insert = $this->for(Model::TABLE)
-                    ->with(Model::values())
-                    ->insert([
-                        $this->generate_hash(),
-                        $_POST["api_key"],
-                        $_POST["endpoint"],
-                        $_POST["method"]->value,
-                        time()
-                    ]);
-            } catch (\mysqli_sql_exception $error) {
-                return new Response("Failed to create ACL rule", 500);
-            }
+			// Can not create ACL rule for nonexistent group
+			if ($_POST[AclModel::REF_GROUP->value] !== null && !$this->group_exists()) {
+				return new Response("Failed to create ACL rule. Group with id '{$_POST[AclModel::REF_GROUP->value]}' does not exist", 409);
+			}
 
-            return $insert ? new Response("OK") : new Response("Failed to create ACL rule");
+			// Bail out if ACL rule already exist
+			if ($this->acl_rule_exists()) {
+				return new Response("Failed to create ACL rule. Rule already exist", 409);
+			}
 
-            $params = http_build_query($_POST);
-
-            // Check if ACL rules was added successfully
-            return Call("reflect/acl?endpoint={$_POST["endpoint"]}&api_key={$_POST["api_key"]}&method={$_POST["method"]->value}", Method::GET)->ok
-                ? new Response("OK")
-                : new Response("Failed to add user", 500);
-        }
-    }
+			return $this->for(AclModel::TABLE)
+				->insert($_POST)
+				? new Response($_POST[AclModel::ID->value], 201)
+				: new Response(self::error_prefix(), 500);
+		}
+	}
