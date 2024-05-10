@@ -3,11 +3,11 @@
 	namespace Reflect;
 
 	use Reflect\Path;
-	use Reflect\Database\Database;
+	use Reflect\Request\Auth;
 
-	require_once Path::reflect("src/database/Database.php");
+	require_once Path::reflect("src/request/Auth.php");
 
-	class Request extends Database {
+	class Request extends Auth {
 		public static function get_api_key(): ?string {
 			return parent::$api_key;
 		}
