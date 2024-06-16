@@ -1,6 +1,6 @@
 {
     "require": {
-        "victorwesterlund/libmysqldriver": "^3.2",
+        "victorwesterlund/libmysqldriver": "^3.6",
         "reflect/plugin-rules": "^1.0",
         "victorwesterlund/globalsnapshot": "^1.0"
     }
